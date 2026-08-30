@@ -11,6 +11,7 @@
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
     font:15px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
   .app{display:grid;grid-template-columns:1fr 400px;min-height:100vh}
+  @supports (height:100dvh){.app{min-height:100dvh}.side{max-height:100dvh}}
   @media (max-width:900px){.app{grid-template-columns:1fr}}
   .stage{background:radial-gradient(circle at 50% 30%,#1A1F27 0%,#0B0D10 70%);
     display:flex;align-items:center;justify-content:center;padding:28px;position:relative;min-height:52vh}
@@ -235,6 +236,8 @@
         <button class="b2" id="laserBtn">SVG für Laser und 3D</button>
         <button class="b2" id="pdfBtn">Über den Drucker</button>
         <div class="msg ok" id="exportMsg"></div>
+        <p class="hint" id="iosHint" style="display:none">Auf dem iPhone geht Speichern über das
+          Teilen-Menü — dort „In Dateien sichern“ oder „Bild sichern“ wählen.</p>
 
         <label class="f">Bild im Laser-SVG</label>
         <div class="chips" id="laserImageChips"></div>
@@ -284,6 +287,20 @@
 </div>
 <canvas id="measure" width="10" height="10" hidden></canvas>
 <script>
+/* Damit ein Fehler nicht in einer weissen Seite endet, sondern sichtbar wird */
+function showFatal(msg){
+  let box=document.getElementById("fatal");
+  if(!box){
+    box=document.createElement("div"); box.id="fatal";
+    box.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:99;background:#3A1414;"+
+      "color:#FFD7D7;font:13px/1.5 ui-monospace,monospace;padding:12px 14px;max-height:45vh;overflow:auto";
+    (document.body||document.documentElement).appendChild(box);}
+  box.textContent="Fehler: "+msg;}
+addEventListener("error",e=>showFatal((e.message||e.type)+"  ·  Zeile "+(e.lineno||"?")));
+addEventListener("unhandledrejection",e=>showFatal(String(e.reason&&e.reason.message||e.reason)));
+const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
+  (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+
 /* ============================ Daten ============================== */
 const THEMES = {
   classic:{name:"Classic", bg:"#FFFFFF",ink:"#101010",sub:"#767676",rule:"#DCDCDC",gray:false},
@@ -1369,8 +1386,9 @@ function pdfRenderer(mctx,fontKey,pageH,ox,oy){
 }
 function jpegFor(imEl,g,gray){
   const dpi=Math.min(300,+state.dpi||300);
-  const wpx=Math.max(1,Math.min(5000,Math.round(g.dw/25.4*dpi)));
-  const hpx=Math.max(1,Math.min(5000,Math.round(g.dh/25.4*dpi)));
+  let wpx=Math.max(1,Math.round(g.dw/25.4*dpi)), hpx=Math.max(1,Math.round(g.dh/25.4*dpi));
+  const lim=Math.min(MAXPIX,25000000);
+  if(wpx*hpx>lim){const f=Math.sqrt(lim/(wpx*hpx));wpx=Math.max(1,Math.floor(wpx*f));hpx=Math.max(1,Math.floor(hpx*f));}
   const c=document.createElement("canvas"); c.width=wpx; c.height=hpx;
   const x=c.getContext("2d");
   x.fillStyle="#FFFFFF"; x.fillRect(0,0,wpx,hpx);
@@ -1443,21 +1461,50 @@ function exportPDF(){
 
 /* Export */
 function fileBase(){return (state.title||"poster").replace(/[^\w\-äöüÄÖÜß ]/g,"").trim().replace(/\s+/g,"-").toLowerCase()||"poster";}
-function saveFile(blob,name){
-  const u=URL.createObjectURL(blob),a=document.createElement("a");
-  a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),5000);
-  $("exportMsg").className="msg ok"; $("exportMsg").textContent=name+" gespeichert";}
+async function saveFile(blob,name){
+  const msg=(t,c)=>{$("exportMsg").className="msg "+(c||"ok");$("exportMsg").textContent=t;};
+  /* iPhone und iPad: über das Teilen-Menü in Dateien oder Fotos sichern */
+  try{
+    if(navigator.canShare&&navigator.share){
+      const f=new File([blob],name,{type:blob.type});
+      if(navigator.canShare({files:[f]})){
+        await navigator.share({files:[f],title:name});
+        msg(name+" geteilt"); return;}}
+  }catch(e){ if(e&&e.name==="AbortError"){msg("Abgebrochen.","warn");return;} }
+  const u=URL.createObjectURL(blob), a=document.createElement("a");
+  if("download" in a){
+    a.href=u; a.download=name; a.rel="noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(u),8000);
+    msg(name+" gespeichert"); return;}
+  const w=window.open(u,"_blank");
+  if(w)msg("In neuem Tab geöffnet — dort lange tippen und sichern.","warn");
+  else msg("Der Browser hat das Speichern blockiert. Bitte Pop-ups erlauben.","bad");}
+/* Safari auf dem iPhone bricht über rund 16 Millionen Bildpunkten ab.
+   Statt einer leeren Datei rechnen wir dann automatisch etwas kleiner. */
+const MAXPIX = IOS ? 16000000 : 90000000;
+function fitDpi(sh,dpi){
+  let px=Math.round(sh.w/25.4*dpi), py=Math.round(sh.h/25.4*dpi);
+  if(px*py<=MAXPIX&&px<=16384&&py<=16384)return dpi;
+  const f=Math.min(Math.sqrt(MAXPIX/(px*py)),16384/px,16384/py);
+  return Math.max(72,Math.floor(dpi*f));}
 function bigCanvas(dpi){
   const cfg=buildCfg(), sh=sheetSize(cfg);
-  const px=Math.round(sh.w/25.4*dpi), py=Math.round(sh.h/25.4*dpi);
+  const real=fitDpi(sh,dpi);
+  if(real<dpi){$("exportMsg").className="msg warn";
+    $("exportMsg").textContent="Dieses Gerät schafft nur "+real+" dpi bei dieser Grösse — es wird mit "+real+" dpi gespeichert.";}
+  const px=Math.round(sh.w/25.4*real), py=Math.round(sh.h/25.4*real);
   const cv=document.createElement("canvas"); cv.width=px; cv.height=py;
   const ctx=cv.getContext("2d");
   ctx.fillStyle="#FFFFFF"; ctx.fillRect(0,0,px,py);
   renderSheet((ox,oy)=>canvasRenderer(ctx,px/sh.w,FONTS[state.font].stack,ox,oy),cfg);
   return cv;}
 $("pngBtn").onclick=()=>{
-  const sh=sheetSize(buildCfg());
-  try{bigCanvas(state.dpi).toBlob(b=>saveFile(b,fileBase()+"-"+Math.round(sh.w)+"x"+Math.round(sh.h)+"mm-"+state.dpi+"dpi.png"),"image/png");}
+  const sh=sheetSize(buildCfg()), real=fitDpi(sh,state.dpi);
+  try{bigCanvas(state.dpi).toBlob(b=>{
+    if(!b){$("exportMsg").className="msg bad";
+      $("exportMsg").textContent="Das Bild ist zu gross für diesen Browser. Kleinere Auflösung wählen.";return;}
+    saveFile(b,fileBase()+"-"+Math.round(sh.w)+"x"+Math.round(sh.h)+"mm-"+real+"dpi.png");},"image/png");}
   catch(e){$("exportMsg").className="msg bad";
     $("exportMsg").textContent="Export gesperrt: Das Bild stammt von einer fremden Adresse. Bitte als Datei laden.";}};
 $("pdfBtn").onclick=()=>{
@@ -1465,6 +1512,8 @@ $("pdfBtn").onclick=()=>{
   let url; try{url=bigCanvas(300).toDataURL("image/png");}
   catch(e){$("exportMsg").className="msg bad";$("exportMsg").textContent="Druck gesperrt: Bild von fremder Adresse. Bitte als Datei laden.";return;}
   const w=window.open("","_blank");
+  if(!w){$("exportMsg").className="msg bad";
+    $("exportMsg").textContent="Der Browser hat das Druckfenster blockiert. Nimm „PDF speichern“.";return;}
   w.document.write(`<html><head><title>${fileBase()}</title><style>
     @page{size:${sh.w}mm ${sh.h}mm;margin:0}
     html,body{margin:0;padding:0}img{width:${sh.w}mm;height:${sh.h}mm;display:block}
@@ -1513,6 +1562,7 @@ $("tplSave").onclick=()=>{
   $("tplName").value=""; tplRender();};
 tplRender();
 
+if(IOS)$("iosHint").style.display="block";
 addEventListener("resize",()=>{render();drawWaveEditor();});
 syncCrop(); syncColors(); ensureWave(); drawWaveEditor();
 render();
