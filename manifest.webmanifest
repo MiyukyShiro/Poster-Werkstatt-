@@ -1,0 +1,19 @@
+{
+  "name": "Poster-Werkstatt",
+  "short_name": "Poster",
+  "description": "Eigene Poster mit Bild, Liste, Wellenform und QR-Code — lokal im Browser.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0B0D10",
+  "theme_color": "#0B0D10",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%230B0D10'/%3E%3Crect x='96' y='72' width='320' height='260' fill='%235FB8FF'/%3E%3Crect x='96' y='364' width='190' height='22' fill='%23E9EDF2'/%3E%3Crect x='96' y='404' width='120' height='14' fill='%238B93A0'/%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
