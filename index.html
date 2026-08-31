@@ -99,6 +99,8 @@
           <select id="preset"></select>
           <button class="chip" id="presetApply" style="flex:0 0 auto">Einsetzen</button>
         </div>
+        <label class="f">Suchen nach</label>
+        <div class="chips" id="searchModeChips"></div>
         <div class="row" style="margin-top:9px">
           <input type="text" id="q" placeholder="Album suchen …">
           <button class="chip" id="searchBtn" style="flex:0 0 auto">Suchen</button>
@@ -149,6 +151,10 @@
 
         <label class="f">Bildformat</label>
         <div class="chips" id="ratioChips"></div>
+        <label class="f">Bild im Kästchen</label>
+        <div class="chips" id="fitChips"></div>
+        <p class="hint">„Auto“ übernimmt das Seitenverhältnis deines Bildes, „Ganz zeigen“
+          lässt nichts weg.</p>
         <div id="paletteWrap" style="display:none">
           <label class="f">Farben aus dem Bild</label>
           <div class="swatches" id="swatches"></div>
@@ -269,8 +275,12 @@
       <summary>Hilfe</summary>
       <div class="body">
         <p class="hint">
+          <b>Zuschnitt:</b> „Füllen“ schneidet zu, „Ganz zeigen“ lässt nichts weg,
+          und „Auto“ beim Bildformat passt das Kästchen an dein Bild an.<br><br>
           <b>Bilder</b> lassen sich auch ins Fenster ziehen oder mit Strg + V einfügen.
           Nichts davon verlässt dein Gerät.<br><br>
+          <b>Suche:</b> „Band“ zeigt alle Alben eines Interpreten, „Album“ sucht direkt danach,
+          „Song“ übernimmt einen einzelnen Titel samt Cover und Link.<br><br>
           <b>Liste:</b> eine Zeile pro Eintrag, Zeit am Ende — „Erster Song 3:50“.
           Die Gesamtlänge rechnet sich selbst.<br><br>
           <b>PDF speichern</b> behält Text als Text, ideal für die Druckerei.
@@ -341,12 +351,14 @@ const state = {
   imgUrl:null, palette:[], zoom:1, offX:0, offY:0,
   wave:null, waveName:"", qr:"", showQR:false, bleed:0, marks:false,
   waveStyle:"mirror", waveMode:"small", waveN:34, waveH:1, waveColor:null,
-  layout:"standard", colors:null, img2Url:null, fontCustom:null, deko:"none",
+  layout:"standard", colors:null, img2Url:null, fontCustom:null, deko:"none", searchMode:"album", fit:"cover",
   laserImage:"dots", laserGrid:70, laserGamma:1, laserInvert:false, laserPreview:false,
 };
 let img=null, img2=null, tainted=false, lastImgGeom=null, previewScale=1, sheetOff=0;
 const DEKO={
-  none:"Ohne", frame:"Rahmen", double:"Doppelrahmen", corners:"Ecken", band:"Balken", line:"Kopflinie",
+  none:"Ohne", frame:"Rahmen", double:"Doppelt", thick:"Dick", half:"Halbrahmen",
+  corners:"Ecken", brackets:"Klammern", ticks:"Skala", cross:"Register",
+  band:"Kopfbalken", foot:"Fussbalken", line:"Kopflinie", rules:"Zwei Linien", dots:"Punktreihe",
 };
 const LAYOUTS={
   standard:{name:"Klassisch",hint:"Bild oben, Liste unten. Im Querformat steht das Bild links."},
@@ -564,12 +576,14 @@ function svgRenderer(mctx,stack,vector,ox,oy){
 }
 
 /* ============================ Layout ============================== */
-function imgGeom(im,x,y,w,h,zoom,ox,oy){
+function imgGeom(im,x,y,w,h,zoom,ox,oy,fit){
   const box=w/h, ir=im.width/im.height; let dw,dh;
-  if(ir>box){dh=h;dw=h*ir;}else{dw=w;dh=w/ir;}
+  if(fit==="contain"){ if(ir>box){dw=w;dh=w/ir;} else {dh=h;dw=h*ir;} }
+  else { if(ir>box){dh=h;dw=h*ir;} else {dw=w;dh=w/ir;} }
   dw*=zoom; dh*=zoom;
-  const sx=(dw-w)/2, sy=(dh-h)/2;
-  return {x,y,w,h,sx,sy,dw,dh,dx:x-sx+ox*sx,dy:y-sy+oy*sy};
+  const sx=Math.max(0,(dw-w)/2), sy=Math.max(0,(dh-h)/2);
+  const cx=x+(w-dw)/2, cy=y+(h-dh)/2;
+  return {x,y,w,h,sx,sy,dw,dh,dx:cx+ox*sx,dy:cy+oy*sy};
 }
 /* Bild in Punkte oder Striche umrechnen, damit der Laser es gravieren kann */
 let sampleCache={key:null,data:null};
@@ -607,8 +621,9 @@ function drawHalftone(r,cfg,g,imEl,tag){
 }
 function drawImageBlock(r,cfg,x,y,w,h){
   const th=cfg.theme;
-  if(img){const g=imgGeom(img,x,y,w,h,cfg.zoom,cfg.offX,cfg.offY);
+  if(img){const g=imgGeom(img,x,y,w,h,cfg.zoom,cfg.offX,cfg.offY,cfg.fit);
     lastImgGeom=g;
+    if(cfg.fit==="contain"&&!r.vector)r.rect(x,y,w,h,cfg.theme.bg);
     if(r.vector){
       let done=false;
       if(cfg.laserImage!=="outline")done=drawHalftone(r,cfg,g,img,"a");
@@ -751,7 +766,7 @@ function drawPoster(r,cfg){
   }else if(L==="duo"){
     const gap=cw*.03, iw=(cw-gap)/2, ih=Math.min(iw*cfg.ratio,H*.5);
     drawImageBlock(r,cfg,pad,pad,iw,ih);
-    if(img2){const g=imgGeom(img2,pad+iw+gap,pad,iw,ih,1,0,0);
+    if(img2){const g=imgGeom(img2,pad+iw+gap,pad,iw,ih,1,0,0,cfg.fit);
       if(r.vector){
         let done=false;
         if(cfg.laserImage!=="outline")done=drawHalftone(r,cfg,g,img2,"b");
@@ -786,15 +801,36 @@ function drawDeko(r,cfg){
   const col=r.vector?"#000":cfg.theme.rule, ink=r.vector?"#000":cfg.theme.ink;
   const box=(i,t,c)=>{r.line(i,i,W-i,i,c,t);r.line(W-i,i,W-i,H-i,c,t);
     r.line(W-i,H-i,i,H-i,c,t);r.line(i,H-i,i,i,c,t);};
-  const i=pad*.42;
+  const i=pad*.42, s2=Math.min(W,H);
   if(d==="frame")box(i,.5,col);
   else if(d==="double"){box(i,.6,col);box(i*1.9,.25,col);}
-  else if(d==="corners"){
-    const l=Math.min(W,H)*.055, t=.5;
+  else if(d==="thick")box(i,1.6,col);
+  else if(d==="half"){r.line(i,i,i,H-i,ink,.8);r.line(i,H-i,W-i,H-i,ink,.8);}
+  else if(d==="corners"||d==="brackets"){
+    const l=s2*(d==="brackets"?.09:.055), t=d==="brackets"?1.2:.5;
     [[i,i,1,1],[W-i,i,-1,1],[i,H-i,1,-1],[W-i,H-i,-1,-1]].forEach(([x,y,sx,sy])=>{
       r.line(x,y,x+sx*l,y,col,t); r.line(x,y,x,y+sy*l,col,t);});}
-  else if(d==="band"&&!r.vector)r.rect(0,0,W,pad*.30,ink);
+  else if(d==="ticks"){
+    const n=Math.max(6,Math.round(W/12)), l=pad*.22;
+    for(let k=1;k<n;k++){const x=W*k/n;
+      r.line(x,i,x,i+l,col,.3); r.line(x,H-i,x,H-i-l,col,.3);}
+    const m=Math.max(6,Math.round(H/12));
+    for(let k=1;k<m;k++){const y=H*k/m;
+      r.line(i,y,i+l,y,col,.3); r.line(W-i,y,W-i-l,y,col,.3);}}
+  else if(d==="cross"){
+    const l=s2*.018;
+    [[i,i],[W-i,i],[i,H-i],[W-i,H-i]].forEach(([x,y])=>{
+      r.line(x-l,y,x+l,y,col,.35); r.line(x,y-l,x,y+l,col,.35);});}
+  else if(d==="band"){if(!r.vector)r.rect(0,0,W,pad*.30,ink);else r.line(0,pad*.15,W,pad*.15,"#000",pad*.3);}
+  else if(d==="foot"){if(!r.vector)r.rect(0,H-pad*.30,W,pad*.30,ink);else r.line(0,H-pad*.15,W,H-pad*.15,"#000",pad*.3);}
   else if(d==="line")r.line(pad,pad*.55,W-pad,pad*.55,ink,.7);
+  else if(d==="rules"){r.line(pad,pad*.55,W-pad,pad*.55,ink,.7);
+    r.line(pad,H-pad*.55,W-pad,H-pad*.55,ink,.7);}
+  else if(d==="dots"){
+    const n=Math.max(8,Math.round((W-pad*2)/6)), rad=Math.min(.7,(W-pad*2)/n*.18);
+    for(let k=0;k<=n;k++){const x=pad+(W-pad*2)*k/n;
+      if(r.dot){r.dot(x,pad*.55,rad,ink); r.dot(x,H-pad*.55,rad,ink);}
+      else{r.rect(x-rad,pad*.55-rad,rad*2,rad*2,ink); r.rect(x-rad,H-pad*.55-rad,rad*2,rad*2,ink);}}}
 }
 
 /* ================== Bogen: Anschnitt und Schnittmarken ============ */
@@ -826,7 +862,7 @@ function buildCfg(){
   const theme=state.colors?Object.assign({},base,state.colors):base;
   return {W:p.w,H:p.h,pad:+state.pad,theme,themeKey:state.theme,layout:state.layout,
     img2Url:state.img2Url,
-    imgUrl:state.imgUrl,ratio:RATIOS[state.ratio],tracks,title:state.title,artist:state.artist,
+    imgUrl:state.imgUrl,ratio:autoRatio(),fit:state.fit,tracks,title:state.title,artist:state.artist,
     numbered:state.numbered,palette:state.palette,showPalette:state.showPalette,showWave:state.showWave,
     advisory:state.advisory,metaLeft:{label:state.dateLabel,value:state.dateValue},
     metaRight:mins?{label:"Länge",value:mins+" min"}:null,footer:state.footer,
@@ -837,6 +873,12 @@ function buildCfg(){
     laserImage:state.laserImage,laserGrid:+state.laserGrid||70,
     laserGamma:+state.laserGamma||1,laserInvert:state.laserInvert,deko:state.deko};
 }
+/* Auto: das Kästchen übernimmt das Seitenverhältnis des Bildes,
+   damit nichts weggeschnitten werden muss */
+function autoRatio(){
+  if(state.ratio!=="auto")return RATIOS[state.ratio]||1;
+  if(!img)return 1;
+  return Math.min(2,Math.max(.5,img.height/img.width));}
 const $=id=>document.getElementById(id);
 function sheetSize(cfg){const m=sheetMargin(cfg);return {w:cfg.W+2*m,h:cfg.H+2*m,m};}
 
@@ -882,7 +924,9 @@ function chips(host,items,get,set){
 function allChips(){
   chips($("themeChips"),Object.entries(THEMES).map(([k,v])=>[k,v.name]),()=>state.theme,v=>state.theme=v);
   chips($("fontChips"),Object.entries(FONTS).map(([k,v])=>[k,v.name,v.stack]),()=>state.font,v=>state.font=v);
-  chips($("ratioChips"),Object.keys(RATIOS).map(k=>[k,k]),()=>state.ratio,v=>state.ratio=v);
+  chips($("ratioChips"),[["auto","Auto"]].concat(Object.keys(RATIOS).map(k=>[k,k])),
+    ()=>state.ratio,v=>state.ratio=v);
+  chips($("fitChips"),[["cover","Füllen"],["contain","Ganz zeigen"]],()=>state.fit,v=>state.fit=v);
   chips($("orientChips"),[[false,"Hochformat"],[true,"Querformat"]],()=>state.landscape,v=>state.landscape=v);
   chips($("dpiChips"),[[150,"150 dpi"],[300,"300 dpi"],[600,"600 dpi"]],()=>state.dpi,v=>state.dpi=v);
   chips($("waveStyleChips"),[["mirror","Gespiegelt"],["bars","Balken"],["line","Linie"]],
@@ -893,6 +937,10 @@ function allChips(){
   chips($("layoutChips"),Object.entries(LAYOUTS).map(([k,v])=>[k,v.name]),
     ()=>state.layout,v=>state.layout=v);
   chips($("dekoChips"),Object.entries(DEKO).map(([k,v])=>[k,v]),()=>state.deko,v=>state.deko=v);
+  chips($("searchModeChips"),[["album","Album"],["band","Band"],["song","Song"]],
+    ()=>state.searchMode,v=>{state.searchMode=v;
+      $("q").placeholder=(v==="band"?"Band oder Interpret suchen …":v==="song"?"Song suchen …":"Album suchen …");
+      $("results").innerHTML=""; $("searchMsg").textContent="";});
   chips($("laserImageChips"),[["dots","Raster"],["lines","Striche"],["outline","Nur Umriss"]],
     ()=>state.laserImage,v=>state.laserImage=v);
 }
@@ -1127,34 +1175,103 @@ function jsonp(url){
 }
 async function search(){
   const q=$("q").value.trim(); if(!q)return;
-  $("searchMsg").className="msg"; $("searchMsg").textContent="Suche läuft …"; $("results").innerHTML="";
+  const mode=state.searchMode||"album", c=itunesCountry();
+  sMsg("Suche läuft …"); $("results").innerHTML="";
   try{
-    const d=await jsonp("https://itunes.apple.com/search?term="+encodeURIComponent(q)+"&entity=album&limit=8");
-    if(!d.results||!d.results.length){$("searchMsg").className="msg bad";$("searchMsg").textContent="Nichts gefunden.";return;}
-    $("searchMsg").textContent="";
-    d.results.forEach(a=>{
-      const b=document.createElement("button"); b.className="res";
-      b.innerHTML=`<img src="${a.artworkUrl100||""}" alt=""><div><div class="t">${a.collectionName}</div><div class="a">${a.artistName}</div></div>`;
-      b.onclick=()=>loadAlbum(a); $("results").appendChild(b);});
-  }catch(e){$("searchMsg").className="msg bad";
-    $("searchMsg").textContent="Suche nicht möglich ("+e.message+"). Liste einfach von Hand eintippen.";}}
+    if(mode==="band"){
+      const d=await jsonp(ITUNES+"/search?term="+encodeURIComponent(q)+"&entity=musicArtist&limit=10&country="+c);
+      const list=(d.results||[]).filter(a=>a.artistId);
+      if(!list.length)return sMsg("Keine Band gefunden.","bad");
+      sMsg("");
+      list.forEach(a=>addRow("",a.artistName,a.primaryGenreName||"Interpret",()=>showAlbumsOf(a)));
+      return;}
+    if(mode==="song"){
+      const d=await jsonp(ITUNES+"/search?term="+encodeURIComponent(q)+"&entity=song&limit=14&country="+c);
+      const list=(d.results||[]).filter(t=>t.trackName);
+      if(!list.length)return sMsg("Kein Song gefunden.","bad");
+      sMsg("");
+      list.forEach(t=>addRow(t.artworkUrl100,t.trackName,t.artistName+" · "+(t.collectionName||""),()=>loadSong(t)));
+      return;}
+    const d=await jsonp(ITUNES+"/search?term="+encodeURIComponent(q)+"&entity=album&limit=12&country="+c);
+    const list=(d.results||[]).filter(a=>a.collectionId);
+    if(!list.length)return sMsg("Nichts gefunden.","bad");
+    sMsg("");
+    list.forEach(a=>addRow(a.artworkUrl100,a.collectionName,a.artistName,()=>loadAlbum(a)));
+  }catch(e){sMsg("Suche nicht möglich ("+e.message+"). Liste einfach von Hand eintippen.","bad");}}
+
+const ITUNES="https://itunes.apple.com";
+function itunesCountry(){
+  const l=(navigator.language||"de-DE").split("-");
+  return (l[1]||"DE").toUpperCase();}
+function sMsg(t,c){$("searchMsg").className="msg "+(c||"");$("searchMsg").textContent=t;}
+function addRow(art,title,sub,onClick){
+  const b=document.createElement("button"); b.className="res";
+  const img=art?`<img src="${art}" alt="">`:`<img alt="" style="background:#262B33">`;
+  b.innerHTML=img+`<div><div class="t">${(title||"").replace(/</g,"&lt;")}</div>`+
+    `<div class="a">${(sub||"").replace(/</g,"&lt;")}</div></div>`;
+  b.onclick=onClick; $("results").appendChild(b); return b;}
+
+/* Alle Alben einer Band */
+async function showAlbumsOf(a){
+  sMsg("Lade Alben von "+a.artistName+" …");
+  try{
+    const d=await jsonp(ITUNES+"/lookup?id="+a.artistId+"&entity=album&limit=100&country="+itunesCountry());
+    const albums=(d.results||[]).filter(r=>r.collectionId&&r.collectionName)
+      .sort((x,y)=>String(y.releaseDate||"").localeCompare(String(x.releaseDate||"")));
+    $("results").innerHTML="";
+    if(!albums.length)return sMsg("Keine Alben gefunden.","bad");
+    sMsg(albums.length+" Alben");
+    addRow("","← Zurück zur Suche","",()=>{$("results").innerHTML="";sMsg("");});
+    albums.forEach(al=>addRow(al.artworkUrl100,al.collectionName,
+      (al.releaseDate||"").slice(0,4)+(al.trackCount?" · "+al.trackCount+" Titel":""),()=>loadAlbum(al)));
+  }catch(e){sMsg("Alben nicht ladbar ("+e.message+").","bad");}}
+
+/* Aus Trefferdaten eine Zeile "Titel  m:ss" bauen */
+function trackLine(t){
+  const ms=t.trackTimeMillis||0, m=Math.floor(ms/60000), sec=Math.round(ms%60000/1000);
+  return t.trackName+(ms?" "+m+":"+String(sec).padStart(2,"0"):"");}
+async function fetchTracks(collectionId){
+  const d=await jsonp(ITUNES+"/lookup?id="+collectionId+"&entity=song&limit=200&country="+itunesCountry());
+  return (d.results||[]).filter(r=>r.wrapperType==="track"&&r.kind==="song");}
+function fillList(songs){
+  state.tracksText=songs.map(trackLine).join("\n");
+  $("tracks").value=state.tracksText;}
+
+/* Einzelner Song — Titel und Interpret vom Song, die Liste kommt vom Album */
+async function loadSong(t){
+  state.title=t.trackName; state.artist=t.artistName;
+  state.dateLabel="Veröffentlicht";
+  state.dateValue=t.releaseDate?new Date(t.releaseDate).toLocaleDateString("de-DE",
+    {day:"numeric",month:"long",year:"numeric"}):"";
+  if(t.trackViewUrl){state.qr=t.trackViewUrl;$("qr").value=state.qr;}
+  ["title","artist","dateLabel","dateValue"].forEach(k=>$(k).value=state[k]||"");
+  const url=(t.artworkUrl100||"").replace("100x100bb","1200x1200bb");
+  if(url){$("coverUrl").value=url; loadCoverFromUrl(url);}
+  sMsg("Lade Titel …");
+  try{
+    const songs=t.collectionId?await fetchTracks(t.collectionId):[];
+    if(songs.length){fillList(songs); sMsg(songs.length+" Titel aus „"+(t.collectionName||"Album")+"“ übernommen.","ok");}
+    else{fillList([t]); sMsg("Song übernommen.","ok");}
+  }catch(e){fillList([t]); sMsg("Song übernommen, Album nicht erreichbar.","warn");}
+  render();}
+
+/* Ganzes Album mit Tracklist */
 async function loadAlbum(a){
-  $("searchMsg").className="msg"; $("searchMsg").textContent="Lade Tracklist …";
+  sMsg("Lade Tracklist …");
   try{
-    const d=await jsonp("https://itunes.apple.com/lookup?id="+a.collectionId+"&entity=song&limit=200");
-    const songs=(d.results||[]).filter(r=>r.wrapperType==="track"&&r.kind==="song");
+    const songs=await fetchTracks(a.collectionId);
     state.title=a.collectionName; state.artist=a.artistName; state.dateLabel="Veröffentlicht";
-    state.dateValue=a.releaseDate?new Date(a.releaseDate).toLocaleDateString("de-DE",{day:"numeric",month:"long",year:"numeric"}):"";
-    state.tracksText=songs.map(s=>{const ms=s.trackTimeMillis||0,m=Math.floor(ms/60000),sec=Math.round(ms%60000/1000);
-      return s.trackName+" "+m+":"+String(sec).padStart(2,"0");}).join("\n");
-    ["title","artist","dateLabel","dateValue"].forEach(k=>$(k).value=state[k]);
-    $("tracks").value=state.tracksText;
-    if(a.collectionViewUrl&&!state.qr){state.qr=a.collectionViewUrl;$("qr").value=state.qr;}
+    state.dateValue=a.releaseDate?new Date(a.releaseDate).toLocaleDateString("de-DE",
+      {day:"numeric",month:"long",year:"numeric"}):"";
+    if(songs.length)fillList(songs);
+    ["title","artist","dateLabel","dateValue"].forEach(k=>$(k).value=state[k]||"");
+    if(a.collectionViewUrl){state.qr=a.collectionViewUrl;$("qr").value=state.qr;}
     const url=(a.artworkUrl100||"").replace("100x100bb","1200x1200bb");
     if(url){$("coverUrl").value=url; loadCoverFromUrl(url);}
-    $("searchMsg").className="msg ok"; $("searchMsg").textContent=songs.length+" Titel übernommen.";
+    sMsg(songs.length?songs.length+" Titel übernommen.":"Keine Titel gefunden — Liste bitte selbst eintippen.", songs.length?"ok":"warn");
     render();
-  }catch(e){$("searchMsg").className="msg bad";$("searchMsg").textContent="Tracklist nicht ladbar ("+e.message+").";}}
+  }catch(e){sMsg("Tracklist nicht ladbar ("+e.message+").","bad");}}
+
 $("searchBtn").onclick=search;
 $("q").addEventListener("keydown",e=>{if(e.key==="Enter")search();});
 
