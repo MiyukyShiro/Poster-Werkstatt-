@@ -59,6 +59,12 @@
   .res div{min-width:0}
   .res .t{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .res .a{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  a.res,a.res:visited,a.res:hover{color:var(--text);text-decoration:none}
+  a.res .t{color:var(--text)}
+  a.res .a{color:var(--dim)}
+  #anbieterListe .res,#plzResults .res{align-items:flex-start;padding:11px 12px}
+  #anbieterListe .t,#plzResults .t{white-space:normal;overflow:visible;font-weight:600;margin-bottom:2px}
+  #anbieterListe .a,#plzResults .a{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.45}
   .swatches{display:flex;gap:5px;margin-top:8px}.swatches i{flex:1;height:26px;border-radius:4px}
   .vorlage{display:flex;gap:6px;align-items:center;margin-top:6px}
   .vorlage button{flex:1;text-align:left;padding:9px 10px;border:1px solid var(--line);border-radius:7px;
@@ -314,12 +320,41 @@
     </details>
 
     <details class="sec">
+      <summary>Drucken lassen</summary>
+      <div class="body">
+        <label class="f">Grosse Anbieter</label>
+        <div class="results" id="anbieterListe" style="max-height:none"></div>
+        <label class="f">Betriebe in deiner Nähe</label>
+        <div class="row">
+          <input type="text" id="plz" placeholder="Postleitzahl" inputmode="numeric">
+          <select id="land" style="flex:0 0 90px">
+            <option value="ch">CH</option><option value="de">DE</option>
+            <option value="at">AT</option><option value="li">LI</option>
+          </select>
+          <button class="chip" id="plzBtn" style="flex:0 0 auto">Suchen</button>
+        </div>
+        <div class="results" id="plzResults" style="max-height:340px"></div>
+        <div class="msg" id="plzMsg"></div>
+        <p class="hint">Sucht Copyshops, Druckereien, Fotoläden und Rahmenmacher im Umkreis von
+          20 km über OpenStreetMap. Es wird nur die Postleitzahl übermittelt. Die Daten stammen
+          von Freiwilligen und sind je nach Gegend lückenhaft.</p>
+
+        <div id="printList"></div>
+        <p class="hint">Die Anbieter sind Beispiele, keine Empfehlung und keine Werbung — es gibt
+          keine Provision. Preise und Bedingungen ändern sich, bitte selbst vergleichen.</p>
+      </div>
+    </details>
+
+    <details class="sec">
       <summary>Rechtliches</summary>
       <div class="body">
         <p class="hint" style="font-size:13px">
           <b>Diese Werkstatt ist für den privaten Gebrauch gedacht.</b><br><br>
           Sie läuft vollständig auf deinem Gerät. Es werden keine Daten erhoben, gespeichert
-          oder übertragen. Bilder, Texte und Musikangaben verlassen dein Gerät nicht.<br><br>
+          oder übertragen. Bilder, Texte und Musikangaben verlassen dein Gerät nicht.
+          Nur zwei Funktionen fragen fremde Dienste: die Musiksuche sendet den Suchbegriff an
+          Apple, Deezer und MusicBrainz, die Umkreissuche sendet die Postleitzahl an
+          OpenStreetMap.<br><br>
           <b>Was frei ist:</b> Titellisten, Laufzeiten, Erscheinungsdaten und ähnliche Angaben
           sind blosse Fakten und nicht geschützt. Eigene Fotos und die hier erzeugten Muster
           gehören dir — damit darfst du machen, was du willst, auch verkaufen.<br><br>
@@ -376,7 +411,7 @@ function showFatal(msg){
   box.textContent="Fehler: "+msg;}
 addEventListener("error",e=>showFatal((e.message||e.type)+"  ·  Zeile "+(e.lineno||"?")));
 addEventListener("unhandledrejection",e=>showFatal(String(e.reason&&e.reason.message||e.reason)));
-const VERSION="15";
+const VERSION="20";
 const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
   (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 
@@ -1979,6 +2014,154 @@ function syncUI(){
     $("installBtn").style.display="block";});
   $("installBtn").onclick=()=>{if(deferred){deferred.prompt();deferred=null;
     $("installBtn").style.display="none";}};
+})();
+
+/* ===================== Betriebe in der Nähe =====================
+   Postleitzahl über Nominatim in Koordinaten, dann Overpass nach
+   Copyshops, Druckereien, Fotoläden und Rahmenmachern fragen.
+   Beides offene Dienste von OpenStreetMap, ohne Schlüssel. */
+const OSM_ARTEN={copyshop:"Copyshop",printer:"Druckerei",photo:"Fotoladen",
+  frame:"Rahmen & Einrahmung",stationery:"Schreibwaren",engraver:"Gravur"};
+function entfernung(a,b,c,d){
+  const R=6371, t=Math.PI/180;
+  const dl=(c-a)*t, dg=(d-b)*t;
+  const x=Math.sin(dl/2)**2+Math.cos(a*t)*Math.cos(c*t)*Math.sin(dg/2)**2;
+  return R*2*Math.asin(Math.sqrt(x));}
+async function plzSuche(){
+  const plz=$("plz").value.trim(), land=$("land").value;
+  const msg=(t,c)=>{$("plzMsg").className="msg "+(c||"");$("plzMsg").textContent=t;};
+  if(!plz)return msg("Bitte eine Postleitzahl eintragen.","warn");
+  $("plzResults").innerHTML=""; msg("Suche Ort …");
+  let lat,lon,ort;
+  try{
+    const r1=await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1"+
+      "&postalcode="+encodeURIComponent(plz)+"&countrycodes="+land);
+    const d1=await r1.json();
+    if(!d1.length)return msg("Diese Postleitzahl finde ich nicht.","bad");
+    lat=+d1[0].lat; lon=+d1[0].lon; ort=(d1[0].display_name||"").split(",")[0];
+  }catch(e){return msg("Ortssuche nicht erreichbar.","bad");}
+  msg("Suche Betriebe um "+ort+" …");
+  const q="[out:json][timeout:25];("+
+    ['node["shop"="copyshop"]','way["shop"="copyshop"]',
+     'node["craft"="printer"]','way["craft"="printer"]',
+     'node["shop"="printing"]','way["shop"="printing"]',
+     'node["shop"="frame"]','way["shop"="frame"]',
+     'node["shop"="photo"]','way["shop"="photo"]',
+     'node["craft"="engraver"]','way["craft"="engraver"]']
+      .map(t=>t+"(around:20000,"+lat+","+lon+");").join("")+
+    ");out center 60;";
+  try{
+    const r2=await fetch("https://overpass-api.de/api/interpreter",
+      {method:"POST",body:"data="+encodeURIComponent(q)});
+    const d2=await r2.json();
+    const liste=(d2.elements||[]).map(e=>{
+      const t=e.tags||{}, la=e.lat||(e.center&&e.center.lat), lo=e.lon||(e.center&&e.center.lon);
+      if(!t.name||!la)return null;
+      const art=OSM_ARTEN[t.shop]||OSM_ARTEN[t.craft]||"Betrieb";
+      const adr=[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" ")+
+        (t["addr:city"]?", "+t["addr:city"]:"");
+      return {name:t.name,art,adr,km:entfernung(lat,lon,la,lo),la,lo,web:t.website||t["contact:website"]};
+    }).filter(Boolean).sort((a,b)=>a.km-b.km).slice(0,25);
+    if(!liste.length)return msg("In 20 km ist bei OpenStreetMap nichts eingetragen. Die Online-Anbieter unten helfen weiter.","warn");
+    msg(liste.length+" Betriebe um "+ort);
+    liste.forEach(e=>{
+      const a=document.createElement("a");
+      a.className="res"; a.target="_blank"; a.rel="noopener";
+      a.href=e.web||("https://www.openstreetmap.org/?mlat="+e.la+"&mlon="+e.lo+"#map=17/"+e.la+"/"+e.lo);
+      a.innerHTML='<div style="width:40px;text-align:center;font:11px/1 ui-monospace,monospace;color:var(--accent)">'+
+        e.km.toFixed(1)+'<br>km</div><div><div class="t">'+e.name.replace(/</g,"&lt;")+'</div>'+
+        '<div class="a">'+e.art+(e.adr?" · "+e.adr.replace(/</g,"&lt;"):"")+'</div></div>';
+      $("plzResults").appendChild(a);});
+  }catch(e){msg("Die Umkreissuche ist gerade nicht erreichbar. Später nochmal versuchen.","bad");}}
+$("plzBtn").onclick=plzSuche;
+$("land").addEventListener("change",()=>anbieterListe());
+$("plz").addEventListener("keydown",e=>{if(e.key==="Enter")plzSuche();});
+(function(){const l=(navigator.language||"de-CH").split("-")[1];
+  if(l&&["CH","DE","AT","LI"].indexOf(l.toUpperCase())>=0)$("land").value=l.toLowerCase();})();
+
+/* ===================== Grosse Anbieter ===================== */
+const ANBIETER=[
+  {n:"ifolor",l:"https://www.ifolor.ch",g:"Fotoposter, Alu-Dibond, Leinwand. Schweizer Anbieter, schnelle Lieferung.",c:["ch","li"]},
+  {n:"Smartphoto",l:"https://www.smartphoto.ch",g:"Fotoposter und Wandbilder, breite Formatauswahl.",c:["ch","li"]},
+  {n:"myposter",l:"https://www.myposter.com",g:"Poster, Rahmen und Wandbilder, viele Materialien.",c:["ch","de","at","li"]},
+  {n:"Saal Digital",l:"https://www.saal-digital.com",g:"Fotolabor-Qualität, auch FineArt-Papiere. Guter Allrounder.",c:["ch","de","at","li"]},
+  {n:"WhiteWall",l:"https://www.whitewall.com",g:"Galerie-Niveau, Fine-Art und Rahmen. Teurer, dafür die beste Anmutung.",c:["ch","de","at","li"]},
+  {n:"Pixum",l:"https://www.pixum.de",g:"Poster und Wandbilder, häufig Aktionen.",c:["de","at"]},
+  {n:"CEWE",l:"https://www.cewe.de",g:"Sehr verbreitet, Abholung auch in vielen Läden möglich.",c:["de","at","ch"]},
+  {n:"Posterlounge",l:"https://www.posterlounge.de",g:"Poster in vielen Grössen, auch gerahmt.",c:["de","at","ch"]},
+  {n:"Onlinedruck.ch",l:"https://www.onlinedruck.ch",g:"Druckerei für Auflagen. Braucht Anschnitt und Schnittmarken.",c:["ch","li"]},
+  {n:"Onlineprinters",l:"https://www.onlineprinters.de",g:"Druckerei für Auflagen, ab etwa zehn Stück günstig.",c:["de","at"]},
+  {n:"Flyeralarm",l:"https://www.flyeralarm.com",g:"Druckerei für Auflagen und Plakate bis DIN A0.",c:["de","at","ch"]},
+  {n:"Displate",l:"https://displate.com",g:"Poster auf Metallplatte mit Magnethalterung. Feste Vorgaben.",c:["ch","de","at","li"]},
+];
+function anbieterListe(){
+  let land=($("land").value||"").toLowerCase();
+  if(["ch","de","at","li"].indexOf(land)<0)land="ch";
+  const host=$("anbieterListe");
+  host.innerHTML="";
+  ANBIETER.filter(a=>a.c.indexOf(land)>=0).forEach(a=>{
+    const el=document.createElement("a");
+    el.className="res"; el.href=a.l; el.target="_blank"; el.rel="noopener";
+    el.innerHTML='<div style="width:40px;text-align:center;color:var(--accent);font-size:15px">→</div>'+
+      '<div><div class="t">'+a.n+'</div><div class="a">'+a.g+'</div></div>';
+    host.appendChild(el);});}
+anbieterListe();
+
+/* ===================== Druckwege ===================== */
+const DRUCKWEGE=[
+  {name:"Selbst drucken",
+   was:"Eigener Drucker, A4 oder A3. Randlos geht bei den wenigsten Geräten — plane einen weissen Rand ein.",
+   mit:"PNG mit 300 dpi oder direkt „Über den Drucker“.",
+   bsp:"",
+   set:{bleed:0,marks:false,dpi:300}},
+  {name:"Fotolabor / Posterdruck",
+   was:"Der übliche Weg für Poster an die Wand. Schneiden die Datei selbst zu, deshalb kein Anschnitt nötig. Meist auch Rahmen, Alu-Dibond oder Acryl im Angebot.",
+   mit:"PNG oder JPG mit 300 dpi in der Endgrösse, kein Anschnitt, keine Schnittmarken.",
+   bsp:"",
+   set:{bleed:0,marks:false,dpi:300}},
+  {name:"Druckerei mit Anschnitt",
+   was:"Klassische Online-Druckerei für Auflagen. Will Beschnittzugabe und Schnittmarken, dafür wird es ab etwa zehn Stück deutlich günstiger.",
+   mit:"PDF mit 3 mm Anschnitt und Schnittmarken.",
+   bsp:"",
+   set:{bleed:3,marks:true,dpi:300}},
+  {name:"Copyshop um die Ecke",
+   was:"Schnell, keine Versandkosten, gut für einen Probedruck bevor du das teure Papier bestellst.",
+   mit:"PDF, kein Anschnitt. Papier ab 200 g wirkt deutlich wertiger als 120 g.",
+   bsp:"",
+   set:{bleed:0,marks:false,dpi:300}},
+  {name:"Metalldruck",
+   was:"Poster auf Metallplatte, magnetische Wandhalterung. Feste Vorgaben, dafür ein sehr eigener Look.",
+   mit:"JPG über den Displate-Knopf. Keine Rahmen-Deko, kein Anschnitt.",
+   bsp:"",
+   set:{format:"displate",custom:false,deko:"none",bleed:0,marks:false,dpi:300,mat:0}},
+  {name:"Lasergravur / 3D-Druck",
+   was:"Holz, Acryl oder Schiefer statt Papier. Rechnet das Bild in ein Punktraster um.",
+   mit:"SVG über „Für Laser und 3D“. Rote Linien schneiden, schwarze gravieren.",
+   bsp:"Örtliche Werkstätten, Makerspaces oder Anbieter für Gravur auf Bestellung.",
+   set:{laserPreview:true,bleed:0,marks:false}},
+];
+(function(){
+  const host=$("printList");
+  DRUCKWEGE.forEach(d=>{
+    const box=document.createElement("div");
+    box.style.cssText="border:1px solid var(--line);border-radius:9px;padding:12px;margin-top:10px;"+
+      "background:var(--panel2)";
+    box.innerHTML='<div style="font-weight:600;font-size:14px;margin-bottom:6px">'+d.name+'</div>'+
+      '<p style="font-size:12.5px;line-height:1.55;color:var(--dim);margin:0 0 8px">'+d.was+
+      '<br><span style="color:var(--text)">Mitgeben:</span> '+d.mit+
+      (d.bsp?'<br>'+d.bsp:'')+'</p>';
+    const b=document.createElement("button");
+    b.className="chip"; b.textContent="Einstellungen übernehmen";
+    b.onclick=()=>{
+      Object.assign(state,d.set);
+      syncUI(); render();
+      box.querySelector(".hinweisSet").textContent="Übernommen.";
+      setTimeout(()=>{box.querySelector(".hinweisSet").textContent="";},2500);};
+    const note=document.createElement("span");
+    note.className="hinweisSet";
+    note.style.cssText="font-size:12.5px;color:var(--accent);margin-left:10px";
+    box.appendChild(b); box.appendChild(note);
+    host.appendChild(box);});
 })();
 
 /* ===================== Anlass-Vorlagen ===================== */
