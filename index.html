@@ -124,6 +124,12 @@
         <label class="f">Liste <span class="val" id="trackInfo"></span></label>
         <textarea id="tracks" spellcheck="false" placeholder="Ein Eintrag pro Zeile, Zeit am Ende"></textarea>
         <label class="check"><input type="checkbox" id="numbered" checked> Durchnummerieren</label>
+        <label class="check"><input type="checkbox" id="wrapList"> Lange Einträge umbrechen statt kürzen</label>
+        <label class="f">Beschreibungstext</label>
+        <textarea id="descText" spellcheck="false" style="min-height:110px"
+          placeholder="Fliesstext, wird automatisch umgebrochen"></textarea>
+        <label class="f">Bewertung</label>
+        <div class="chips" id="ratingChips"></div>
       </div>
     </details>
 
@@ -195,6 +201,9 @@
         <input type="range" id="gapScale" min="20" max="260" value="100">
         <label class="f">Passepartout <span class="val" id="matVal">0 mm</span></label>
         <input type="range" id="mat" min="0" max="40" value="0">
+        <label class="f">Hintergrund</label><div class="chips" id="bgStyleChips"></div>
+        <label class="f">Stärke <span class="val" id="bgStrengthVal">50 %</span></label>
+        <input type="range" id="bgStrength" min="0" max="100" value="50">
         <label class="f">Farben</label>
         <div class="colorgrid">
           <div><label>Hintergrund</label><input type="color" id="cBg"></div>
@@ -272,6 +281,8 @@
         <button class="b2" id="laserBtn">SVG für Laser und 3D</button>
         <button class="b2" id="pdfBtn">Über den Drucker</button>
         <div class="msg ok" id="exportMsg"></div>
+        <button class="b2" id="displateBtn">Für Displate speichern (JPG)</button>
+        <div class="msg" id="displateMsg"></div>
         <p class="hint" id="iosHint" style="display:none">Auf dem iPhone geht Speichern über das
           Teilen-Menü — dort „In Dateien sichern“ oder „Bild sichern“ wählen.</p>
 
@@ -365,7 +376,7 @@ function showFatal(msg){
   box.textContent="Fehler: "+msg;}
 addEventListener("error",e=>showFatal((e.message||e.type)+"  ·  Zeile "+(e.lineno||"?")));
 addEventListener("unhandledrejection",e=>showFatal(String(e.reason&&e.reason.message||e.reason)));
-const VERSION="13";
+const VERSION="15";
 const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
   (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 
@@ -395,6 +406,7 @@ const FORMAT_GROUPS = [
     ["f3040","30 × 40 cm",300,400],["f4050","40 × 50 cm",400,500],["f5070","50 × 70 cm",500,700],["f6090","60 × 90 cm",600,900]]],
   ["Quadratisch",[["q15","15 × 15 cm",150,150],["q20","20 × 20 cm",200,200],["q30","30 × 30 cm",300,300],
     ["q40","40 × 40 cm",400,400],["q50","50 × 50 cm",500,500]]],
+  ["Metalldruck",[["displate","Displate · 1:1.4",300,420],["displateXL","Displate XL",337,472]]],
   ["Klein · Laser & Platten",[["s812","8 × 12 cm",80,120],["s1010","10 × 10 cm",100,100],["s1015","10 × 15 cm",100,150]]],
 ];
 const FORMATS={}; FORMAT_GROUPS.forEach(([g,items])=>items.forEach(([k,n,w,h])=>FORMATS[k]={name:n,w,h}));
@@ -414,6 +426,8 @@ const state = {
   titleScale:1, listScale:1, gapScale:1, align:"left", overline:"", mat:0, img3Url:null,
   imgH:0, vAlign:"top", imgFx:"none", fxContrast:1, fxBright:1, quote:"",
   qrColor:"safe", qrDark:"#000000", qrLight:"#FFFFFF",
+  wrapList:false, descText:"", rating:0,
+  bgStyle:"flat", bgStrength:.5, bg2:null,
 };
 let img=null, imgDraw=null, imgDrawUrl=null, img2=null, img3=null, tainted=false, lastImgGeom=null, previewScale=1, sheetOff=0;
 const DEKO={
@@ -724,6 +738,24 @@ function drawQR(r,cfg,x,y,size){
     if(m[iy][ix])r.rect(x+(ix+quiet)*cell,y+(iy+quiet)*cell,cell*1.02,cell*1.02,dunkel);
   return size;}
 
+/* Bricht Text auf eine Breite um */
+function wrapText(r,str,maxW,size,weight){
+  const worte=String(str||"").split(/\s+/).filter(Boolean), zeilen=[];
+  let z="";
+  const br=t=>r.measure(t,{size,weight});
+  worte.forEach(w=>{
+    const t=z?z+" "+w:w;
+    if(br(t)<=maxW){z=t;return;}
+    if(z){zeilen.push(z);z="";}
+    let rest=w;
+    while(br(rest)>maxW&&rest.length>1){
+      let teil=rest;
+      while(teil.length>1&&br(teil)>maxW)teil=teil.slice(0,-1);
+      zeilen.push(teil); rest=rest.slice(teil.length);}
+    z=rest;});
+  if(z)zeilen.push(z);
+  return zeilen.length?zeilen:[""];}
+
 /* Passt die Schriftgrösse an, damit nichts über den Rand läuft */
 function fitText(r,str,maxW,size,weight,minF){
   if(!str)return {str:"",size};
@@ -776,6 +808,16 @@ function drawTextBlock(r,cfg,x,y,w,availH,base){
     const sw=Math.min(base*.042,w/6),sh=sw*.62;
     const px=(al==="right")?x:x+w-cfg.palette.length*sw;
     cfg.palette.forEach((c,i)=>r.rect(px+i*sw,cy-sh,sw,sh,c));}
+  if(cfg.rating>0){
+    const sq=base*.021, lu=sq*.5, ges=5*sq+4*lu;
+    const sx=al==="center"?x+w/2-ges/2:al==="right"?x+w-ges:x;
+    cy+=sq*1.5;
+    for(let i=0;i<5;i++){
+      const bx=sx+i*(sq+lu);
+      if(i<cfg.rating)r.rect(bx,cy-sq,sq,sq,ink);
+      else{r.line(bx,cy-sq,bx+sq,cy-sq,rule,.3);r.line(bx+sq,cy-sq,bx+sq,cy,rule,.3);
+        r.line(bx+sq,cy,bx,cy,rule,.3);r.line(bx,cy,bx,cy-sq,rule,.3);}}
+    cy+=sq*.3;}
   cy+=base*.035; r.line(x,cy,x+w,cy,rule,.35); cy+=base*.045;
   if(cfg.quote){
     const qs=base*.030;
@@ -783,6 +825,11 @@ function drawTextBlock(r,cfg,x,y,w,availH,base){
     r.text(Q.str,al==="center"?x+w/2:al==="right"?x+w:x,cy+Q.size*.8,
       {size:Q.size,color:sub,align:an});
     cy+=Q.size*2.1;}
+  if(cfg.descText){
+    const ds=base*.021*(cfg.listScale||1), dl=ds*1.55;
+    const zeilen=wrapText(r,cfg.descText,w,ds,400);
+    zeilen.forEach((z,i)=>r.text(z,ax,cy+ds+i*dl,{size:ds,color:ink,align:an}));
+    cy+=zeilen.length*dl+base*.035;}
   if(cfg.showWave&&cfg.waveMode==="wide"){
     const wh=base*.10*(cfg.waveH||1);
     drawWave(r,cfg,x,cy,w,wh,ink);
@@ -793,13 +840,31 @@ function drawTextBlock(r,cfg,x,y,w,availH,base){
   let ts=base*.0215*(cfg.listScale||1), lh=ts*1.72;
   const room=availH-(cy-y);
   if(rows*lh>room){const f=room/(rows*lh);ts*=f;lh*=f;}
-  tracks.forEach((t,i)=>{
-    const col=Math.floor(i/rows),row=i%rows,tx=x+col*(colW+gap),ty=cy+row*lh+ts;
-    const timeW=t.time?r.measure(t.time,{size:ts})+ts*.6:0;
-    let name=(cfg.numbered?(i+1)+". ":"")+t.name, maxW=colW-timeW;
-    if(r.measure(name,{size:ts})>maxW){while(name.length>4&&r.measure(name+"…",{size:ts})>maxW)name=name.slice(0,-1);name+="…";}
-    r.text(name,tx,ty,{size:ts,color:ink});
-    if(t.time)r.text(t.time,tx+colW,ty,{size:ts,color:sub,align:"right"});});
+  if(cfg.wrapList){
+    /* Lange Einträge laufen in die nächste Zeile weiter */
+    const eintraege=tracks.map((t,i)=>{
+      const timeW=t.time?r.measure(t.time,{size:ts})+ts*.6:0;
+      const kopf=(cfg.numbered?(i+1)+". ":"")+t.name;
+      return {zeilen:wrapText(r,kopf,colW-timeW,ts,400),time:t.time};});
+    const gesamt=eintraege.reduce((a,e)=>a+e.zeilen.length,0)||1;
+    const proSpalte=Math.ceil(gesamt/nCols);
+    if(proSpalte*lh>room){const f=room/(proSpalte*lh);ts*=f;lh*=f;}
+    let zeile=0;
+    eintraege.forEach(e=>{
+      e.zeilen.forEach((z,k)=>{
+        const col=Math.min(nCols-1,Math.floor(zeile/proSpalte)), row=zeile%proSpalte;
+        const tx=x+col*(colW+gap), ty=cy+row*lh+ts;
+        r.text(z,tx,ty,{size:ts,color:ink});
+        if(k===0&&e.time)r.text(e.time,tx+colW,ty,{size:ts,color:sub,align:"right"});
+        zeile++;});});
+  }else{
+    tracks.forEach((t,i)=>{
+      const col=Math.floor(i/rows),row=i%rows,tx=x+col*(colW+gap),ty=cy+row*lh+ts;
+      const timeW=t.time?r.measure(t.time,{size:ts})+ts*.6:0;
+      let name=(cfg.numbered?(i+1)+". ":"")+t.name, maxW=colW-timeW;
+      if(r.measure(name,{size:ts})>maxW){while(name.length>4&&r.measure(name+"…",{size:ts})>maxW)name=name.slice(0,-1);name+="…";}
+      r.text(name,tx,ty,{size:ts,color:ink});
+      if(t.time)r.text(t.time,tx+colW,ty,{size:ts,color:sub,align:"right"});});}
 
   const mx=x+w-metaW; let my=cy+ts;
   if(cfg.showWave&&cfg.waveMode!=="wide"){
@@ -889,6 +954,7 @@ function drawPoster(r,cfg){
   const pad=(+cfg.pad||0)+mat;
   if(!r.vector){
     r.rect(0,0,W,H,cfg.theme.bg);
+    drawBackground(r,cfg);
     if(mat>0){
       r.rect(mat*.55,mat*.55,W-mat*1.1,H-mat*1.1,mixHex(cfg.theme.bg,cfg.theme.ink,.06));
       r.line(mat*.55,mat*.55,W-mat*.55,mat*.55,cfg.theme.rule,.25);
@@ -985,6 +1051,42 @@ function drawPoster(r,cfg){
     r.line(W,H,0,H,"#FF0000",.2);r.line(0,H,0,0,"#FF0000",.2);}
 }
 
+/* Hintergrund: Verlauf, Vignette oder Körnung — überall aus Rechtecken
+   gebaut, damit PNG, SVG und PDF gleich aussehen. */
+function drawBackground(r,cfg){
+  if(r.vector)return;
+  const {W,H}=cfg, st=cfg.bgStyle||"flat", k=Math.max(0,Math.min(1,cfg.bgStrength));
+  if(st==="flat"||k<=0)return;
+  const bg=cfg.theme.bg, ink=cfg.theme.ink;
+  if(st==="gradient"){
+    const c2=cfg.bg2||mixHex(bg,ink,.10+k*.35);
+    const n=140;
+    for(let i=0;i<n;i++)
+      r.rect(0,H*i/n,W,H/n+.2,mixHex(bg,c2,i/(n-1)));
+    return;}
+  if(st==="vignette"){
+    const rgb=hexToRgb(ink), stufen=22;
+    for(let i=0;i<stufen;i++){
+      const t=(stufen-i)/stufen, a=(t*t*k*.5).toFixed(3);
+      const d=Math.min(W,H)*.5*(i/stufen), col="rgba("+rgb+","+a+")";
+      const dw=W-d*2, dh=H-d*2, band=Math.min(W,H)*.5/stufen+.2;
+      r.rect(d,d,dw,band,col); r.rect(d,H-d-band,dw,band,col);
+      r.rect(d,d,band,dh,col);  r.rect(W-d-band,d,band,dh,col);}
+    return;}
+  if(st==="grain"){
+    const rgb=hexToRgb(ink);
+    let x=1234567;
+    const n=900, s2=Math.min(W,H)*.0022;
+    for(let i=0;i<n;i++){
+      x=(x*1664525+1013904223)>>>0;
+      const px=(x>>>8)%1000/1000*W;
+      x=(x*1664525+1013904223)>>>0;
+      const py=(x>>>8)%1000/1000*H;
+      x=(x*1664525+1013904223)>>>0;
+      const a=(((x>>>8)%100)/100*.5+.2)*k*.35;
+      r.rect(px,py,s2*2,s2*2,"rgba("+rgb+","+a.toFixed(3)+")");}
+    return;}
+}
 function drawDeko(r,cfg){
   const d=cfg.deko; if(!d||d==="none")return;
   const {W,H,pad}=cfg;
@@ -1064,7 +1166,9 @@ function buildCfg(){
     laserGamma:+state.laserGamma||1,laserInvert:state.laserInvert,deko:state.deko,
     titleScale:+state.titleScale||1,listScale:+state.listScale||1,gapScale:+state.gapScale||1,
     align:state.align||"left",overline:state.overline||"",mat:+state.mat||0,img3Url:state.img3Url,
-    imgH:+state.imgH||0,vAlign:state.vAlign||"top",quote:state.quote||"",qrFarben:qrFarben()};
+    imgH:+state.imgH||0,vAlign:state.vAlign||"top",quote:state.quote||"",qrFarben:qrFarben(),
+    wrapList:!!state.wrapList,descText:state.descText||"",rating:+state.rating||0,
+    bgStyle:state.bgStyle||"flat",bgStrength:+state.bgStrength||0,bg2:state.bg2};
 }
 /* Auto: das Kästchen übernimmt das Seitenverhältnis des Bildes,
    damit nichts weggeschnitten werden muss */
@@ -1141,6 +1245,10 @@ function allChips(){
     ()=>state.searchMode,v=>{state.searchMode=v;
       $("q").placeholder=(v==="band"?"Band oder Interpret suchen …":v==="song"?"Song suchen …":"Album suchen …");
       $("results").innerHTML=""; $("searchMsg").textContent="";});
+  chips($("bgStyleChips"),[["flat","Einfarbig"],["gradient","Verlauf"],["vignette","Vignette"],["grain","Körnung"]],
+    ()=>state.bgStyle,v=>state.bgStyle=v);
+  chips($("ratingChips"),[[0,"Ohne"],[1,"1"],[2,"2"],[3,"3"],[4,"4"],[5,"5"]],
+    ()=>state.rating,v=>state.rating=v);
   chips($("qrColorChips"),[["safe","Schwarz auf Weiss"],["theme","Posterfarben"],["custom","Eigene"]],
     ()=>state.qrColor,v=>{state.qrColor=v;
       $("qrCustom").style.display=v==="custom"?"grid":"none";});
@@ -1175,7 +1283,8 @@ function bind(id,key){
 }
 ["title","artist","dateLabel","dateValue","footer","tracksText","qr"].forEach(k=>
   bind(k==="tracksText"?"tracks":k,k));
-["numbered","advisory","showPalette","showWave","showQR","marks"].forEach(k=>bind(k,k));
+["numbered","advisory","showPalette","showWave","showQR","marks","wrapList"].forEach(k=>bind(k,k));
+bind("descText","descText");
 $("pad").oninput=e=>{state.pad=+e.target.value;$("padVal").textContent=state.pad+" mm";render();};
 $("bleed").oninput=e=>{state.bleed=+e.target.value;$("bleedVal").textContent=state.bleed+" mm";render();};
 $("cw").oninput=e=>{state.cw=e.target.value;state.custom=true;render();};
@@ -1409,6 +1518,8 @@ slider("titleScale","titleScale"," %",100);
 slider("listScale","listScale"," %",100);
 slider("gapScale","gapScale"," %",100);
 slider("mat","mat"," mm",0);
+slider("bgStrength","bgStrength"," %",100);
+$("displateBtn").onclick=exportDisplate;
 bind("quote","quote");
 ["qrDark","qrLight"].forEach(id=>{
   $(id).value=state[id];
@@ -1780,7 +1891,8 @@ function syncUI(){
   $("tracks").value=state.tracksText||"";
   $("pad").value=state.pad; $("padVal").textContent=state.pad+" mm";
   $("bleed").value=state.bleed; $("bleedVal").textContent=state.bleed+" mm";
-  ["numbered","advisory","showPalette","showWave","showQR","marks"].forEach(k=>{if($(k))$(k).checked=!!state[k];});
+  ["numbered","advisory","showPalette","showWave","showQR","marks","wrapList"].forEach(k=>{if($(k))$(k).checked=!!state[k];});
+  $("descText").value=state.descText||"";
   $("waveN").value=state.waveN||34; $("waveNVal").textContent=state.waveN||34;
   $("waveH").value=Math.round((state.waveH||1)*100);
   $("waveHVal").textContent=Math.round((state.waveH||1)*100)+" %";
@@ -1800,6 +1912,8 @@ function syncUI(){
   $("gapScale").value=Math.round((state.gapScale||1)*100);
   $("gapScaleVal").textContent=Math.round((state.gapScale||1)*100)+" %";
   $("mat").value=state.mat||0; $("matVal").textContent=(state.mat||0)+" mm";
+  $("bgStrength").value=Math.round((state.bgStrength||0)*100);
+  $("bgStrengthVal").textContent=Math.round((state.bgStrength||0)*100)+" %";
   $("laserGrid").value=state.laserGrid||70; $("laserGridVal").textContent=state.laserGrid||70;
   $("laserGamma").value=Math.round((state.laserGamma||1)*100);
   $("laserGammaVal").textContent=Math.round((state.laserGamma||1)*100)+" %";
@@ -1877,7 +1991,7 @@ const PRESETS={
     dateLabel:"Unser Lied",dateValue:"Perfect — Ed Sheeran",footer:"Danke, dass ihr dabei wart",
     ratio:"4:5",waveMode:"wide",waveStyle:"mirror",numbered:false,
     tracksText:"Erstes Treffen 2019\nZusammengezogen 2021\nVerlobt am Meer 2024\nJa-Wort 2026"}},
-  auto:{name:"Auto",d:{title:"BMW E30 325i",artist:"Baujahr 1989 · Alpinweiss",
+  auto:{name:"Auto",d:{wrapList:true,rating:0,title:"BMW E30 325i",artist:"Baujahr 1989 · Alpinweiss",
     dateLabel:"Gekauft",dateValue:"März 2023",footer:"",ratio:"3:2",waveMode:"small",
     waveStyle:"bars",numbered:false,
     tracksText:"Motor  M20B25\nLeistung  170 PS\nGetriebe  5-Gang\nGewicht  1200 kg\nErster Umbau  2024"}},
@@ -2122,6 +2236,37 @@ $("pdfBtn").onclick=()=>{
     </style></head><body><img src="${url}" onload="window.print()"></body></html>`);
   w.document.close();
   $("exportMsg").className="msg ok"; $("exportMsg").textContent="Im Druckdialog 'Als PDF sichern' wählen.";};
+/* Displate verlangt: Verhältnis 1:1,4 · kurze Seite mindestens 2900 px ·
+   300 dpi · JPG · keine Rahmen · Text mindestens 200 px vom Rand
+   (Stand der Vorgaben von displate.com) */
+function displateCheck(){
+  const cfg=buildCfg(), sh=sheetSize(cfg), hinweise=[];
+  const v=Math.max(sh.w,sh.h)/Math.min(sh.w,sh.h);
+  if(Math.abs(v-1.4)>0.01)hinweise.push("Seitenverhältnis ist "+v.toFixed(3)+":1 statt 1,4:1 — Format „Displate“ wählen.");
+  const kurz=Math.round(Math.min(sh.w,sh.h)/25.4*300);
+  if(kurz<2900)hinweise.push("Kurze Seite ergibt nur "+kurz+" px, nötig sind 2900.");
+  const randPx=Math.round((cfg.pad+(+state.mat||0))/25.4*300);
+  const nötig=Math.round(200*(kurz/2900));
+  if(randPx<nötig)hinweise.push("Innenabstand ist "+randPx+" px, Displate will mindestens "+nötig+" px Abstand zum Rand.");
+  if(["frame","double","thick","half"].indexOf(state.deko)>=0)
+    hinweise.push("Displate lehnt Rahmen in der Gestaltung ab — Deko auf „Ohne“ stellen.");
+  if(state.marks||+state.bleed>0)
+    hinweise.push("Anschnitt und Schnittmarken gehören nicht auf eine Displate-Datei.");
+  return hinweise;}
+
+function exportDisplate(){
+  const h=displateCheck();
+  const box=$("displateMsg");
+  if(h.length){box.className="msg warn";
+    box.innerHTML="Vor dem Hochladen prüfen:<br>· "+h.join("<br>· ");}
+  else{box.className="msg ok"; box.textContent="Alle Vorgaben erfüllt.";}
+  const sh=sheetSize(buildCfg());
+  try{
+    const cv=bigCanvas(300);
+    cv.toBlob(b=>{if(b)saveFile(b,fileBase()+"-displate-"+cv.width+"x"+cv.height+".jpg");},
+      "image/jpeg",0.95);
+  }catch(e){box.className="msg bad";box.textContent="Export blockiert — Bild bitte als Datei laden.";}}
+
 function svgOut(vector){
   const cfg=buildCfg(), sh=sheetSize(cfg), mctx=$("measure").getContext("2d");
   const {r}=renderSheet((ox,oy)=>svgRenderer(mctx,FONTS[state.font].stack,vector,ox,oy),cfg);
