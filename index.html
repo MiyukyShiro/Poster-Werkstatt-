@@ -1192,7 +1192,8 @@ async function search(){
       sMsg("");
       list.forEach(t=>addRow(t.artworkUrl100,t.trackName,t.artistName+" · "+(t.collectionName||""),()=>loadSong(t)));
       return;}
-    const d=await jsonp(ITUNES+"/search?term="+encodeURIComponent(q)+"&entity=album&limit=12&country="+c);
+    let d=await jsonp(ITUNES+"/search?term="+encodeURIComponent(q)+"&entity=album&limit=12&country="+c);
+    if(!(d.results||[]).length)d=await jsonp(ITUNES+"/search?term="+encodeURIComponent(q)+"&entity=album&limit=12");
     const list=(d.results||[]).filter(a=>a.collectionId);
     if(!list.length)return sMsg("Nichts gefunden.","bad");
     sMsg("");
@@ -1230,9 +1231,35 @@ async function showAlbumsOf(a){
 function trackLine(t){
   const ms=t.trackTimeMillis||0, m=Math.floor(ms/60000), sec=Math.round(ms%60000/1000);
   return t.trackName+(ms?" "+m+":"+String(sec).padStart(2,"0"):"");}
-async function fetchTracks(collectionId){
-  const d=await jsonp(ITUNES+"/lookup?id="+collectionId+"&entity=song&limit=200&country="+itunesCountry());
-  return (d.results||[]).filter(r=>r.wrapperType==="track"&&r.kind==="song");}
+/* Apples Abfrage liefert für manche Alben je nach Land keine Titel zurück.
+   Deshalb der Reihe nach mehrere Läden probieren und zuletzt über die Songsuche gehen. */
+function sortTracks(a){
+  return a.slice().sort((x,y)=>((x.discNumber||1)-(y.discNumber||1))||((x.trackNumber||0)-(y.trackNumber||0)));}
+function onlySongs(res,id){
+  return (res||[]).filter(r=>r.wrapperType==="track"&&(r.kind==="song"||!r.kind)&&
+    (!id||r.collectionId===id));}
+async function fetchTracks(collectionId,hint){
+  const stores=[itunesCountry(),"","CH","DE","AT","US"], done=[];
+  for(const c of stores){
+    if(done.indexOf(c)>=0)continue; done.push(c);
+    try{
+      const d=await jsonp(ITUNES+"/lookup?id="+collectionId+"&entity=song&limit=200"+(c?"&country="+c:""));
+      const songs=onlySongs(d.results,collectionId);
+      if(songs.length)return sortTracks(songs);
+    }catch(e){}
+  }
+  if(hint&&hint.artistName){
+    const term=hint.artistName+" "+(hint.collectionName||"");
+    for(const c of [itunesCountry(),"","US"]){
+      try{
+        const d=await jsonp(ITUNES+"/search?term="+encodeURIComponent(term)+
+          "&entity=song&limit=200"+(c?"&country="+c:""));
+        const songs=onlySongs(d.results,collectionId);
+        if(songs.length)return sortTracks(songs);
+      }catch(e){}
+    }
+  }
+  return [];}
 function fillList(songs){
   state.tracksText=songs.map(trackLine).join("\n");
   $("tracks").value=state.tracksText;}
@@ -1249,7 +1276,7 @@ async function loadSong(t){
   if(url){$("coverUrl").value=url; loadCoverFromUrl(url);}
   sMsg("Lade Titel …");
   try{
-    const songs=t.collectionId?await fetchTracks(t.collectionId):[];
+    const songs=t.collectionId?await fetchTracks(t.collectionId,t):[];
     if(songs.length){fillList(songs); sMsg(songs.length+" Titel aus „"+(t.collectionName||"Album")+"“ übernommen.","ok");}
     else{fillList([t]); sMsg("Song übernommen.","ok");}
   }catch(e){fillList([t]); sMsg("Song übernommen, Album nicht erreichbar.","warn");}
@@ -1259,7 +1286,7 @@ async function loadSong(t){
 async function loadAlbum(a){
   sMsg("Lade Tracklist …");
   try{
-    const songs=await fetchTracks(a.collectionId);
+    const songs=await fetchTracks(a.collectionId,a);
     state.title=a.collectionName; state.artist=a.artistName; state.dateLabel="Veröffentlicht";
     state.dateValue=a.releaseDate?new Date(a.releaseDate).toLocaleDateString("de-DE",
       {day:"numeric",month:"long",year:"numeric"}):"";
@@ -1268,7 +1295,8 @@ async function loadAlbum(a){
     if(a.collectionViewUrl){state.qr=a.collectionViewUrl;$("qr").value=state.qr;}
     const url=(a.artworkUrl100||"").replace("100x100bb","1200x1200bb");
     if(url){$("coverUrl").value=url; loadCoverFromUrl(url);}
-    sMsg(songs.length?songs.length+" Titel übernommen.":"Keine Titel gefunden — Liste bitte selbst eintippen.", songs.length?"ok":"warn");
+    sMsg(songs.length?songs.length+" Titel übernommen.":
+      "Apple gibt für dieses Album keine Titel heraus — bitte von Hand eintippen.", songs.length?"ok":"warn");
     render();
   }catch(e){sMsg("Tracklist nicht ladbar ("+e.message+").","bad");}}
 
