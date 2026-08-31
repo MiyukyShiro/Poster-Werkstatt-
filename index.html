@@ -411,7 +411,7 @@ function showFatal(msg){
   box.textContent="Fehler: "+msg;}
 addEventListener("error",e=>showFatal((e.message||e.type)+"  ·  Zeile "+(e.lineno||"?")));
 addEventListener("unhandledrejection",e=>showFatal(String(e.reason&&e.reason.message||e.reason)));
-const VERSION="20";
+const VERSION="21";
 const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
   (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 
@@ -2165,37 +2165,98 @@ const DRUCKWEGE=[
 })();
 
 /* ===================== Anlass-Vorlagen ===================== */
+/* Jeder Anlass setzt zuerst alles auf einen ruhigen Grundzustand,
+   damit keine Reste vom vorherigen stehen bleiben. */
+const P_BASIS={showWave:false,showQR:false,waveMode:"small",waveStyle:"mirror",rating:0,
+  wrapList:false,descText:"",quote:"",overline:"",numbered:false,align:"left",vAlign:"top",
+  imgH:0,ratio:"1:1",layout:"standard",advisory:false,showPalette:true,titleScale:1,listScale:1};
 const PRESETS={
-  playlist:{name:"Playlist / Album",d:{title:"Sommer 2026",artist:"Meine Playlist",
-    dateLabel:"Veröffentlicht",dateValue:"25. November 2026",footer:"",ratio:"1:1",
-    waveMode:"small",waveStyle:"mirror",numbered:true,
+  frei:{g:"Allgemein",name:"Leeres Blatt",d:{title:"Titel",artist:"Untertitel",
+    dateLabel:"",dateValue:"",footer:"",tracksText:""}},
+  foto:{g:"Allgemein",name:"Einfaches Foto",d:{title:"Ein Tag im Juli",artist:"2026",
+    dateLabel:"Ort",dateValue:"",footer:"",tracksText:"",imgH:.68,vAlign:"bottom",ratio:"4:5"}},
+  erinnerung:{g:"Allgemein",name:"Erinnerung",d:{title:"Für immer",artist:"",
+    dateLabel:"Datum",dateValue:"",footer:"",quote:"Ein Satz, der bleibt",
+    tracksText:"",imgH:.62,vAlign:"center",align:"center",layout:"portrait"}},
+  jahr:{g:"Allgemein",name:"Jahresrückblick",d:{title:"2026",artist:"Unser Jahr",
+    dateLabel:"Höhepunkt",dateValue:"",footer:"",numbered:true,
+    tracksText:"Januar  Neues Jahr, alte Pläne\nMärz  Umzug\nJuni  Ferien am Meer\nSeptember  Neuer Job\nDezember  Ruhe"}},
+
+  playlist:{g:"Musik",name:"Playlist / Album",d:{title:"Sommer 2026",artist:"Meine Playlist",
+    dateLabel:"Veröffentlicht",dateValue:"25. November 2026",footer:"",numbered:true,
+    showWave:true,showQR:true,
     tracksText:"Erster Song 3:50\nZweiter Song 4:09\nDritter Song 3:40\nVierter Song 3:39"}},
-  hochzeit:{name:"Hochzeit",d:{vAlign:"center",imgH:.62,quote:"",title:"Anna & Max",artist:"14. Juli 2026 · Luzern",
-    dateLabel:"Unser Lied",dateValue:"Perfect — Ed Sheeran",footer:"Danke, dass ihr dabei wart",
-    ratio:"4:5",waveMode:"wide",waveStyle:"mirror",numbered:false,
-    tracksText:"Erstes Treffen 2019\nZusammengezogen 2021\nVerlobt am Meer 2024\nJa-Wort 2026"}},
-  auto:{name:"Auto",d:{wrapList:true,rating:0,title:"BMW E30 325i",artist:"Baujahr 1989 · Alpinweiss",
-    dateLabel:"Gekauft",dateValue:"März 2023",footer:"",ratio:"3:2",waveMode:"small",
-    waveStyle:"bars",numbered:false,
-    tracksText:"Motor  M20B25\nLeistung  170 PS\nGetriebe  5-Gang\nGewicht  1200 kg\nErster Umbau  2024"}},
-  reise:{name:"Reise",d:{title:"Island",artist:"Roadtrip 2026",dateLabel:"Strecke",
-    dateValue:"2 340 km",footer:"",ratio:"3:2",waveMode:"small",waveStyle:"line",numbered:true,
-    tracksText:"Reykjavík\nÞingvellir\nGullfoss\nVík í Mýrdal\nJökulsárlón\nAkureyri"}},
-  geburt:{name:"Geburt",d:{title:"Mia",artist:"geboren am 3. Mai 2026",dateLabel:"Uhrzeit",
-    dateValue:"04:12 Uhr",footer:"",ratio:"1:1",waveMode:"wide",waveStyle:"mirror",numbered:false,
-    tracksText:"Grösse  51 cm\nGewicht  3 420 g\nSternzeichen  Stier\nOrt  Kantonsspital"}},
-  konzert:{name:"Konzert",d:{title:"Live in Zürich",artist:"Hallenstadion · 2026",
-    dateLabel:"Reihe / Platz",dateValue:"B 14",footer:"",ratio:"3:2",waveMode:"wide",
-    waveStyle:"bars",numbered:true,
+  konzert:{g:"Musik",name:"Konzert",d:{title:"Live in Zürich",artist:"Hallenstadion · 2026",
+    dateLabel:"Reihe / Platz",dateValue:"B 14",footer:"",numbered:true,showWave:true,
+    waveMode:"wide",ratio:"3:2",
     tracksText:"Opener 4:12\nZweiter Song 3:38\nAkustik-Teil 5:02\nZugabe 6:21"}},
+
+  hochzeit:{g:"Menschen",name:"Hochzeit",d:{title:"Anna & Max",artist:"14. Juli 2026 · Luzern",
+    dateLabel:"Unser Lied",dateValue:"Perfect — Ed Sheeran",footer:"Danke, dass ihr dabei wart",
+    ratio:"4:5",showWave:true,waveMode:"wide",vAlign:"center",imgH:.62,
+    tracksText:"Erstes Treffen 2019\nZusammengezogen 2021\nVerlobt am Meer 2024\nJa-Wort 2026"}},
+  paar:{g:"Menschen",name:"Paar",d:{title:"Du & ich",artist:"seit 2026",
+    dateLabel:"Unser Ort",dateValue:"",footer:"",ratio:"4:5",imgH:.66,vAlign:"bottom",
+    quote:"",tracksText:"Kennengelernt\nErste Reise\nZusammengezogen"}},
+  familie:{g:"Menschen",name:"Familie",d:{title:"Familie Meier",artist:"2026",
+    dateLabel:"Zuhause",dateValue:"",footer:"",ratio:"3:2",imgH:.6,vAlign:"bottom",
+    tracksText:"Anna  1985\nMarco  1983\nLina  2014\nJonas  2018"}},
+  geburt:{g:"Menschen",name:"Geburt",d:{title:"Mia",artist:"geboren am 3. Mai 2026",
+    dateLabel:"Uhrzeit",dateValue:"04:12 Uhr",footer:"",showWave:true,waveMode:"wide",
+    tracksText:"Grösse  51 cm\nGewicht  3 420 g\nSternzeichen  Stier\nOrt  Kantonsspital"}},
+  geburtstag:{g:"Menschen",name:"Geburtstag",d:{title:"40 Jahre",artist:"Marco",
+    dateLabel:"Gefeiert am",dateValue:"",footer:"",align:"center",layout:"portrait",imgH:.6,
+    tracksText:""}},
+  freunde:{g:"Menschen",name:"Freunde",d:{title:"Die Bande",artist:"seit der Schulzeit",
+    dateLabel:"Treffpunkt",dateValue:"",footer:"",ratio:"3:2",layout:"trio",
+    tracksText:"Ferien 2019\nFestival 2022\nHüttenwochenende 2025"}},
+  abschluss:{g:"Menschen",name:"Abschluss",d:{title:"Bestanden",artist:"Lehre als Schreinerin · 2026",
+    dateLabel:"Note",dateValue:"",footer:"",rating:5,imgH:.6,vAlign:"bottom",
+    tracksText:"Lehrbeginn 2022\nZwischenprüfung 2024\nAbschlussarbeit 2026"}},
+  haustier:{g:"Menschen",name:"Haustier",d:{title:"Loki",artist:"Berner Sennenhund",
+    dateLabel:"Bei uns seit",dateValue:"",footer:"",ratio:"4:5",imgH:.64,vAlign:"bottom",
+    tracksText:"Lieblingsplatz  Sofa\nLieblingsspiel  Stöckchen\nSchwäche  Käse"}},
+
+  auto:{g:"Dinge",name:"Auto",d:{title:"BMW E30 325i",artist:"Baujahr 1989 · Alpinweiss",
+    dateLabel:"Gekauft",dateValue:"März 2023",footer:"",ratio:"3:2",wrapList:true,
+    tracksText:"Motor  M20B25\nLeistung  170 PS\nGetriebe  5-Gang\nGewicht  1200 kg"}},
+  motorrad:{g:"Dinge",name:"Motorrad",d:{title:"Yamaha XSR 700",artist:"Baujahr 2021",
+    dateLabel:"Kilometerstand",dateValue:"",footer:"",ratio:"3:2",wrapList:true,
+    tracksText:"Motor  689 cm³ Zweizylinder\nLeistung  73 PS\nGewicht  186 kg"}},
+  zuhause:{g:"Dinge",name:"Neues Zuhause",d:{title:"Unser Zuhause",artist:"seit April 2026",
+    dateLabel:"Adresse",dateValue:"",footer:"",ratio:"3:2",imgH:.6,vAlign:"bottom",
+    tracksText:"Zimmer  3.5\nStockwerk  2\nBalkon  nach Süden"}},
+  rezept:{g:"Dinge",name:"Rezept",d:{title:"Nonnas Lasagne",artist:"für 4 Personen",
+    dateLabel:"Dauer",dateValue:"90 Minuten",footer:"",wrapList:true,numbered:true,
+    tracksText:"500 g Hackfleisch\n250 g Lasagneblätter\n1 Zwiebel, fein gehackt\n800 g Tomaten\nBéchamel aus Butter, Mehl und Milch"}},
+
+  reise:{g:"Ereignisse",name:"Reise",d:{title:"Island",artist:"Roadtrip 2026",
+    dateLabel:"Strecke",dateValue:"2 340 km",footer:"",ratio:"3:2",numbered:true,
+    tracksText:"Reykjavík\nÞingvellir\nGullfoss\nVík í Mýrdal\nJökulsárlón"}},
+  berge:{g:"Ereignisse",name:"Berge & Wandern",d:{title:"Piz Palü",artist:"3 900 m ü. M.",
+    dateLabel:"Bestiegen am",dateValue:"",footer:"",ratio:"3:2",imgH:.62,vAlign:"bottom",
+    tracksText:"Aufstieg  1 240 Hm\nDauer  6 h 20\nSchwierigkeit  T4"}},
+  sport:{g:"Ereignisse",name:"Sport & Wettkampf",d:{title:"Marathon Zürich",artist:"2026",
+    dateLabel:"Zielzeit",dateValue:"",footer:"",rating:0,numbered:true,
+    tracksText:"10 km  52:10\n21 km  1:48:30\n30 km  2:38:00\nZiel  3:52:14"}},
+  gaming:{g:"Ereignisse",name:"Spiel",d:{title:"Mein Spiel",artist:"Studio · Jahr",
+    dateLabel:"Spielzeit",dateValue:"",footer:"",rating:4,descText:"Ein paar Sätze darüber, was das Spiel für dich war.",
+    tracksText:""}},
+  film:{g:"Ereignisse",name:"Film & Serie",d:{title:"Filmtitel",artist:"Regie · Jahr",
+    dateLabel:"Gesehen am",dateValue:"",footer:"",rating:4,
+    descText:"Kurze Notiz, was hängen geblieben ist.",tracksText:""}},
 };
 (function(){
-  const sel=$("preset");
-  Object.entries(PRESETS).forEach(([k,v])=>{const o=document.createElement("option");
-    o.value=k;o.textContent=v.name;sel.appendChild(o);});
+  const sel=$("preset"), gruppen={};
+  Object.entries(PRESETS).forEach(([k,v])=>{
+    const g=v.g||"Weitere";
+    if(!gruppen[g]){gruppen[g]=document.createElement("optgroup");gruppen[g].label=g;
+      sel.appendChild(gruppen[g]);}
+    const o=document.createElement("option"); o.value=k; o.textContent=v.name;
+    gruppen[g].appendChild(o);});
   $("presetApply").onclick=()=>{
     const p=PRESETS[sel.value]; if(!p)return;
-    Object.assign(state,p.d);
+    Object.assign(state,P_BASIS,p.d);
     syncUI(); render();};
 })();
 
