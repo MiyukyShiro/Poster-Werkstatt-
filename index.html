@@ -279,6 +279,8 @@
           und „Auto“ beim Bildformat passt das Kästchen an dein Bild an.<br><br>
           <b>Bilder</b> lassen sich auch ins Fenster ziehen oder mit Strg + V einfügen.
           Nichts davon verlässt dein Gerät.<br><br>
+          <b>Quellen:</b> gesucht wird bei Apple über alle Länder-Stores, danach bei Deezer und
+          MusicBrainz. Spotify geht leider nicht ohne Anmeldeschlüssel.<br><br>
           <b>Suche:</b> „Band“ zeigt alle Alben eines Interpreten, „Album“ sucht direkt danach,
           „Song“ übernimmt einen einzelnen Titel samt Cover und Link.<br><br>
           <b>Liste:</b> eine Zeile pro Eintrag, Zeit am Ende — „Erster Song 3:50“.
@@ -654,6 +656,19 @@ function drawQR(r,cfg,x,y,size){
     if(m[iy][ix])r.rect(x+(ix+quiet)*cell,y+(iy+quiet)*cell,cell*1.02,cell*1.02,"#000000");
   return size;}
 
+/* Passt die Schriftgrösse an, damit nichts über den Rand läuft */
+function fitText(r,str,maxW,size,weight,minF){
+  if(!str)return {str:"",size};
+  let s=size, w=r.measure(str,{size:s,weight:weight});
+  if(w<=maxW)return {str,size:s};
+  const min=size*(minF||.55);
+  s=Math.max(min,size*maxW/w);
+  let out=str;
+  if(r.measure(out,{size:s,weight:weight})>maxW){
+    while(out.length>3&&r.measure(out+"…",{size:s,weight:weight})>maxW)out=out.slice(0,-1);
+    out+="…";}
+  return {str:out,size:s};}
+
 function drawWave(r,cfg,x,y,w,h,ink){
   const bars=(cfg.wave&&cfg.wave.length)?cfg.wave:waveBars((cfg.title||"")+cfg.tracks.length,cfg.waveN||34);
   const n=bars.length, bw=w/n, col=r.vector?"#000":(cfg.waveColor||ink);
@@ -676,11 +691,15 @@ function drawWave(r,cfg,x,y,w,h,ink){
 function drawTextBlock(r,cfg,x,y,w,availH,base){
   const th=cfg.theme, ink=r.vector?"#000":th.ink, sub=r.vector?"#000":th.sub, rule=r.vector?"#000":th.rule;
   const tracks=cfg.tracks;
-  const tS=base*.098, aS=base*.041;
-  let cy=y+tS*.78;
-  r.text(cfg.title||"Titel",x,cy,{size:tS,weight:700,color:ink});
+  const tS0=base*.098, aS=base*.041;
+  const T=fitText(r,cfg.title||"Titel",w,tS0,700,.42);
+  let cy=y+T.size*.78;
+  r.text(T.str,x,cy,{size:T.size,weight:700,color:ink});
+  const palW=(cfg.showPalette&&cfg.palette.length&&!r.vector)?
+    Math.min(base*.042,w/6)*cfg.palette.length+base*.02:0;
+  const A=fitText(r,cfg.artist||"Untertitel",w-palW,aS,400,.6);
   cy+=aS*1.5;
-  r.text(cfg.artist||"Untertitel",x,cy,{size:aS,color:sub});
+  r.text(A.str,x,cy,{size:A.size,color:sub});
   if(cfg.showPalette&&cfg.palette.length&&!r.vector){
     const sw=Math.min(base*.042,w/6),sh=sw*.62,px=x+w-cfg.palette.length*sw;
     cfg.palette.forEach((c,i)=>r.rect(px+i*sw,cy-sh,sw,sh,c));}
@@ -713,18 +732,23 @@ function drawTextBlock(r,cfg,x,y,w,availH,base){
     r.text(m.label.toUpperCase(),mx,my,{size:lS,color:sub,tracking:lS*.12});
     my+=vS*1.35; r.text(m.value,mx,my,{size:vS,color:ink}); my+=vS*2;});
   if(cfg.showQR&&cfg.qr){
-    const size=Math.min(metaW,base*.17);
-    const qy=Math.max(y+availH-size,my);
+    const bottom=y+availH;
+    let size=Math.min(metaW,base*.17);
+    let qy=Math.min(my,bottom-size);
+    if(qy<y){qy=y;}
+    if(qy+size>bottom)size=bottom-qy;
     if(size>8)drawQR(r,cfg,x+w-size,qy,size);}
 }
 /* Mittiger Textblock für Minimal und Polaroid */
 function drawCenterBlock(r,cfg,x,y,w,base,withWave){
   const th=cfg.theme, ink=r.vector?"#000":th.ink, sub=r.vector?"#000":th.sub;
-  const cx=x+w/2, tS=base*.105, aS=base*.040;
-  let cy=y+tS*.8;
-  r.text(cfg.title||"Titel",cx,cy,{size:tS,weight:700,color:ink,align:"center"});
+  const cx=x+w/2, tS0=base*.105, aS=base*.040;
+  const T=fitText(r,cfg.title||"Titel",w,tS0,700,.42);
+  let cy=y+T.size*.8;
+  r.text(T.str,cx,cy,{size:T.size,weight:700,color:ink,align:"center"});
+  const A=fitText(r,cfg.artist||"Untertitel",w,aS,400,.6);
   cy+=aS*1.6;
-  r.text(cfg.artist||"Untertitel",cx,cy,{size:aS,color:sub,align:"center",tracking:aS*.04});
+  r.text(A.str,cx,cy,{size:A.size,color:sub,align:"center",tracking:aS*.04});
   if(withWave&&cfg.showWave){
     const wh=base*.09*(cfg.waveH||1);
     cy+=base*.03; drawWave(r,cfg,x+w*.08,cy,w*.84,wh,ink); cy+=wh+base*.035;}
@@ -1179,14 +1203,40 @@ async function search(){
   sMsg("Suche läuft …"); $("results").innerHTML="";
   try{
     if(mode==="band"){
-      const d=await jsonp(ITUNES+"/search?term="+encodeURIComponent(q)+"&entity=musicArtist&limit=10&country="+c);
-      const list=(d.results||[]).filter(a=>a.artistId);
-      if(!list.length)return sMsg("Keine Band gefunden.","bad");
-      sMsg("");
+      const t=encodeURIComponent(q), map=new Map();
+      const quellen=[
+        ITUNES+"/search?term="+t+"&entity=musicArtist&attribute=artistTerm&limit=15&country="+c,
+        ITUNES+"/search?term="+t+"&entity=album&media=music&limit=25&country="+c,
+        ITUNES+"/search?term="+t+"&entity=musicArtist&attribute=artistTerm&limit=15",
+        ITUNES+"/search?term="+t+"&entity=album&media=music&limit=25",
+        ITUNES+"/search?term="+t+"&entity=song&media=music&limit=25&country="+c];
+      for(const u of quellen){
+        const d=await jsonpTry(u);
+        ((d&&d.results)||[]).forEach(r=>{
+          if(r.artistId&&r.artistName&&!map.has(r.artistId))
+            map.set(r.artistId,{artistId:r.artistId,artistName:r.artistName,
+              primaryGenreName:r.primaryGenreName});});
+        if(map.size>=10)break;}
+      let list=[...map.values()];
+      const ql=q.toLowerCase();
+      list.sort((a,b)=>{
+        const A=a.artistName.toLowerCase(), B=b.artistName.toLowerCase();
+        return (Number(B===ql)-Number(A===ql))||
+               (Number(B.indexOf(ql)===0)-Number(A.indexOf(ql)===0))||
+               (A.length-B.length);});
+      if(!list.length){
+        const dz=await jsonpTry("https://api.deezer.com/search/artist?q="+t+"&limit=10&output=jsonp");
+        const arts=(dz&&dz.data)||[];
+        if(!arts.length)return sMsg("Keine Band gefunden.","bad");
+        sMsg("Bei Apple nichts, dafür bei Deezer.","warn");
+        arts.forEach(a=>addRow(a.picture_medium||"",a.name,"Interpret · Deezer",
+          ()=>showDeezerAlbums(a)));
+        return;}
+      sMsg(list.length+" Treffer");
       list.forEach(a=>addRow("",a.artistName,a.primaryGenreName||"Interpret",()=>showAlbumsOf(a)));
       return;}
     if(mode==="song"){
-      const d=await jsonp(ITUNES+"/search?term="+encodeURIComponent(q)+"&entity=song&limit=14&country="+c);
+      const d=await jsonp(ITUNES+"/search?term="+encodeURIComponent(q)+"&entity=song&media=music&limit=14&country="+c);
       const list=(d.results||[]).filter(t=>t.trackName);
       if(!list.length)return sMsg("Kein Song gefunden.","bad");
       sMsg("");
@@ -1195,7 +1245,14 @@ async function search(){
     let d=await jsonp(ITUNES+"/search?term="+encodeURIComponent(q)+"&entity=album&limit=12&country="+c);
     if(!(d.results||[]).length)d=await jsonp(ITUNES+"/search?term="+encodeURIComponent(q)+"&entity=album&limit=12");
     const list=(d.results||[]).filter(a=>a.collectionId);
-    if(!list.length)return sMsg("Nichts gefunden.","bad");
+    if(!list.length){
+      const dz=await jsonp("https://api.deezer.com/search/album?q="+encodeURIComponent(q)+"&limit=10&output=jsonp");
+      const alben=(dz&&dz.data)||[];
+      if(!alben.length)return sMsg("Nichts gefunden.","bad");
+      sMsg("Bei Apple nichts, dafür bei Deezer.","warn");
+      alben.forEach(al=>addRow(al.cover_medium||"",al.title,(al.artist&&al.artist.name)||"",
+        ()=>loadDeezerAlbum(al)));
+      return;}
     sMsg("");
     list.forEach(a=>addRow(a.artworkUrl100,a.collectionName,a.artistName,()=>loadAlbum(a)));
   }catch(e){sMsg("Suche nicht möglich ("+e.message+"). Liste einfach von Hand eintippen.","bad");}}
@@ -1212,6 +1269,21 @@ function addRow(art,title,sub,onClick){
     `<div class="a">${(sub||"").replace(/</g,"&lt;")}</div></div>`;
   b.onclick=onClick; $("results").appendChild(b); return b;}
 
+async function jsonpTry(u){try{return await jsonp(u);}catch(e){return null;}}
+
+/* Alben eines Interpreten bei Deezer */
+async function showDeezerAlbums(a){
+  sMsg("Lade Alben von "+a.name+" …");
+  const d=await jsonpTry("https://api.deezer.com/artist/"+a.id+"/albums?limit=100&output=jsonp");
+  const alben=(d&&d.data)||[];
+  $("results").innerHTML="";
+  if(!alben.length)return sMsg("Keine Alben gefunden.","bad");
+  sMsg(alben.length+" Alben (Deezer)");
+  addRow("","← Zurück zur Suche","",()=>{$("results").innerHTML="";sMsg("");});
+  alben.sort((x,y)=>String(y.release_date||"").localeCompare(String(x.release_date||"")))
+    .forEach(al=>addRow(al.cover_medium||"",al.title,(al.release_date||"").slice(0,4),
+      ()=>loadDeezerAlbum(Object.assign({artist:{name:a.name}},al))));}
+
 /* Alle Alben einer Band */
 async function showAlbumsOf(a){
   sMsg("Lade Alben von "+a.artistName+" …");
@@ -1220,7 +1292,17 @@ async function showAlbumsOf(a){
     const albums=(d.results||[]).filter(r=>r.collectionId&&r.collectionName)
       .sort((x,y)=>String(y.releaseDate||"").localeCompare(String(x.releaseDate||"")));
     $("results").innerHTML="";
-    if(!albums.length)return sMsg("Keine Alben gefunden.","bad");
+    if(!albums.length){
+      const d2=await jsonpTry(ITUNES+"/search?term="+encodeURIComponent(a.artistName)+
+        "&entity=album&media=music&limit=50");
+      const alt=((d2&&d2.results)||[]).filter(r=>r.artistId===a.artistId&&r.collectionId);
+      if(alt.length)albums.push.apply(albums,alt);}
+    if(!albums.length){
+      const dz=await jsonpTry("https://api.deezer.com/search/artist?q="+
+        encodeURIComponent(a.artistName)+"&limit=1&output=jsonp");
+      const art=((dz&&dz.data)||[])[0];
+      if(art)return showDeezerAlbums(art);
+      return sMsg("Keine Alben gefunden.","bad");}
     sMsg(albums.length+" Alben");
     addRow("","← Zurück zur Suche","",()=>{$("results").innerHTML="";sMsg("");});
     albums.forEach(al=>addRow(al.artworkUrl100,al.collectionName,
@@ -1229,35 +1311,72 @@ async function showAlbumsOf(a){
 
 /* Aus Trefferdaten eine Zeile "Titel  m:ss" bauen */
 function trackLine(t){
-  const ms=t.trackTimeMillis||0, m=Math.floor(ms/60000), sec=Math.round(ms%60000/1000);
+  const ms=t.trackTimeMillis||0, total=Math.round(ms/1000);
+  const m=Math.floor(total/60), sec=total%60;
   return t.trackName+(ms?" "+m+":"+String(sec).padStart(2,"0"):"");}
 /* Apples Abfrage liefert für manche Alben je nach Land keine Titel zurück.
-   Deshalb der Reihe nach mehrere Läden probieren und zuletzt über die Songsuche gehen. */
+   Darum werden mehrere Läden abgefragt und danach zwei andere Datenbanken:
+   Deezer und MusicBrainz. Beide sind offen und brauchen keinen Schlüssel. */
+const STORES=["","US","DE","CH","AT","GB","FR","IT","NL","SE","ES","CA","AU","JP"];
 function sortTracks(a){
   return a.slice().sort((x,y)=>((x.discNumber||1)-(y.discNumber||1))||((x.trackNumber||0)-(y.trackNumber||0)));}
 function onlySongs(res,id){
   return (res||[]).filter(r=>r.wrapperType==="track"&&(r.kind==="song"||!r.kind)&&
     (!id||r.collectionId===id));}
+function norm(name,ms){return {trackName:name,trackTimeMillis:ms||0};}
+
+/* Deezer — offene Schnittstelle, Antwort per JSONP, kein Schlüssel nötig */
+async function deezerTracks(artist,album){
+  const q=encodeURIComponent((artist||"")+" "+(album||""));
+  const s1=await jsonp("https://api.deezer.com/search/album?q="+q+"&limit=5&output=jsonp");
+  const hit=(s1&&s1.data||[])[0];
+  if(!hit)return [];
+  const s2=await jsonp("https://api.deezer.com/album/"+hit.id+"?output=jsonp");
+  const list=(s2&&s2.tracks&&s2.tracks.data)||[];
+  return list.map(t=>norm(t.title,(t.duration||0)*1000));}
+
+/* MusicBrainz — freie Musikdatenbank, normale Abfrage */
+async function mbTracks(artist,album){
+  const q=encodeURIComponent('release:"'+(album||"")+'" AND artist:"'+(artist||"")+'"');
+  const r1=await fetch("https://musicbrainz.org/ws/2/release/?query="+q+"&fmt=json&limit=3");
+  const d1=await r1.json();
+  const rel=(d1.releases||[])[0];
+  if(!rel)return [];
+  const r2=await fetch("https://musicbrainz.org/ws/2/release/"+rel.id+"?inc=recordings&fmt=json");
+  const d2=await r2.json();
+  const out=[];
+  (d2.media||[]).forEach(m=>(m.tracks||[]).forEach(t=>out.push(norm(t.title,t.length||0))));
+  return out;}
+
+let trackSource="";
 async function fetchTracks(collectionId,hint){
-  const stores=[itunesCountry(),"","CH","DE","AT","US"], done=[];
+  trackSource="";
+  const first=itunesCountry(), stores=[first].concat(STORES.filter(c=>c!==first));
   for(const c of stores){
-    if(done.indexOf(c)>=0)continue; done.push(c);
     try{
       const d=await jsonp(ITUNES+"/lookup?id="+collectionId+"&entity=song&limit=200"+(c?"&country="+c:""));
       const songs=onlySongs(d.results,collectionId);
-      if(songs.length)return sortTracks(songs);
+      if(songs.length){trackSource="Apple"+(c?" "+c:"");return sortTracks(songs);}
     }catch(e){}
   }
   if(hint&&hint.artistName){
     const term=hint.artistName+" "+(hint.collectionName||"");
-    for(const c of [itunesCountry(),"","US"]){
+    for(const c of [first,""]){
       try{
         const d=await jsonp(ITUNES+"/search?term="+encodeURIComponent(term)+
           "&entity=song&limit=200"+(c?"&country="+c:""));
         const songs=onlySongs(d.results,collectionId);
-        if(songs.length)return sortTracks(songs);
+        if(songs.length){trackSource="Apple-Suche";return sortTracks(songs);}
       }catch(e){}
     }
+    try{
+      const dz=await deezerTracks(hint.artistName,hint.collectionName);
+      if(dz.length){trackSource="Deezer";return dz;}
+    }catch(e){}
+    try{
+      const mb=await mbTracks(hint.artistName,hint.collectionName);
+      if(mb.length){trackSource="MusicBrainz";return mb;}
+    }catch(e){}
   }
   return [];}
 function fillList(songs){
@@ -1277,10 +1396,30 @@ async function loadSong(t){
   sMsg("Lade Titel …");
   try{
     const songs=t.collectionId?await fetchTracks(t.collectionId,t):[];
-    if(songs.length){fillList(songs); sMsg(songs.length+" Titel aus „"+(t.collectionName||"Album")+"“ übernommen.","ok");}
+    if(songs.length){fillList(songs);
+      sMsg(songs.length+" Titel aus „"+(t.collectionName||"Album")+"“ übernommen ("+trackSource+").","ok");}
     else{fillList([t]); sMsg("Song übernommen.","ok");}
   }catch(e){fillList([t]); sMsg("Song übernommen, Album nicht erreichbar.","warn");}
   render();}
+
+/* Album direkt von Deezer */
+async function loadDeezerAlbum(al){
+  sMsg("Lade Titel von Deezer …");
+  try{
+    const d=await jsonp("https://api.deezer.com/album/"+al.id+"?output=jsonp");
+    const songs=((d.tracks&&d.tracks.data)||[]).map(t=>norm(t.title,(t.duration||0)*1000));
+    state.title=al.title; state.artist=(al.artist&&al.artist.name)||"";
+    if(d.release_date){state.dateLabel="Veröffentlicht";
+      state.dateValue=new Date(d.release_date).toLocaleDateString("de-DE",
+        {day:"numeric",month:"long",year:"numeric"});}
+    if(songs.length)fillList(songs);
+    ["title","artist","dateLabel","dateValue"].forEach(k=>$(k).value=state[k]||"");
+    if(d.link){state.qr=d.link;$("qr").value=state.qr;}
+    const cov=d.cover_xl||al.cover_xl||d.cover_big||al.cover_big;
+    if(cov){$("coverUrl").value=cov; loadCoverFromUrl(cov);}
+    sMsg(songs.length+" Titel übernommen (Deezer).","ok");
+    render();
+  }catch(e){sMsg("Deezer nicht erreichbar.","bad");}}
 
 /* Ganzes Album mit Tracklist */
 async function loadAlbum(a){
@@ -1295,8 +1434,8 @@ async function loadAlbum(a){
     if(a.collectionViewUrl){state.qr=a.collectionViewUrl;$("qr").value=state.qr;}
     const url=(a.artworkUrl100||"").replace("100x100bb","1200x1200bb");
     if(url){$("coverUrl").value=url; loadCoverFromUrl(url);}
-    sMsg(songs.length?songs.length+" Titel übernommen.":
-      "Apple gibt für dieses Album keine Titel heraus — bitte von Hand eintippen.", songs.length?"ok":"warn");
+    sMsg(songs.length?songs.length+" Titel übernommen ("+trackSource+").":
+      "Keine Datenbank kennt die Titel dieses Albums — bitte von Hand eintippen.", songs.length?"ok":"warn");
     render();
   }catch(e){sMsg("Tracklist nicht ladbar ("+e.message+").","bad");}}
 
