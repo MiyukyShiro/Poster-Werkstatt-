@@ -115,6 +115,8 @@
           <input type="text" id="dateLabel" placeholder="Beschriftung">
           <input type="text" id="dateValue" placeholder="Inhalt">
         </div>
+        <label class="f">Zitat oder Spruch</label>
+        <input type="text" id="quote" placeholder="optional, steht unter dem Trennstrich">
         <label class="f">Zeile über dem Bild</label>
         <input type="text" id="overline" placeholder="optional, z. B. der Interpret">
         <label class="f">Fusszeile</label><input type="text" id="footer" placeholder="optional">
@@ -153,6 +155,14 @@
         <button class="b2" id="resetCrop">Ausschnitt zurücksetzen</button>
         <p class="hint">Im Bild ziehen verschiebt, Mausrad zoomt.</p>
 
+        <label class="f">Bildwirkung</label>
+        <div class="chips" id="fxChips"></div>
+        <label class="f">Kontrast <span class="val" id="fxContrastVal">100 %</span></label>
+        <input type="range" id="fxContrast" min="50" max="200" value="100">
+        <label class="f">Helligkeit <span class="val" id="fxBrightVal">100 %</span></label>
+        <input type="range" id="fxBright" min="50" max="180" value="100">
+        <label class="f">Bildhöhe <span class="val" id="imgHVal">Automatisch</span></label>
+        <input type="range" id="imgH" min="0" max="88" value="0">
         <label class="f">Bildformat</label>
         <div class="chips" id="ratioChips"></div>
         <label class="f">Bild im Kästchen</label>
@@ -176,6 +186,7 @@
         <label class="f">Stil</label><div class="chips" id="themeChips"></div>
         <label class="f">Deko</label><div class="chips" id="dekoChips"></div>
         <label class="f">Textausrichtung</label><div class="chips" id="alignChips"></div>
+        <label class="f">Text senkrecht</label><div class="chips" id="vAlignChips"></div>
         <label class="f">Titelgrösse <span class="val" id="titleScaleVal">100 %</span></label>
         <input type="range" id="titleScale" min="50" max="200" value="100">
         <label class="f">Listengrösse <span class="val" id="listScaleVal">100 %</span></label>
@@ -240,6 +251,12 @@
         <label class="f">QR-Code</label>
         <input type="text" id="qr" placeholder="https://…">
         <label class="check"><input type="checkbox" id="showQR"> QR-Code aufs Poster</label>
+        <label class="f">Farbe des Codes</label>
+        <div class="chips" id="qrColorChips"></div>
+        <div class="colorgrid" id="qrCustom" style="display:none">
+          <div><label>Punkte</label><input type="color" id="qrDark"></div>
+          <div><label>Grund</label><input type="color" id="qrLight"></div>
+        </div>
         <div class="msg" id="qrMsg"></div>
       </div>
     </details>
@@ -286,6 +303,30 @@
     </details>
 
     <details class="sec">
+      <summary>Rechtliches</summary>
+      <div class="body">
+        <p class="hint" style="font-size:13px">
+          <b>Diese Werkstatt ist für den privaten Gebrauch gedacht.</b><br><br>
+          Sie läuft vollständig auf deinem Gerät. Es werden keine Daten erhoben, gespeichert
+          oder übertragen. Bilder, Texte und Musikangaben verlassen dein Gerät nicht.<br><br>
+          <b>Was frei ist:</b> Titellisten, Laufzeiten, Erscheinungsdaten und ähnliche Angaben
+          sind blosse Fakten und nicht geschützt. Eigene Fotos und die hier erzeugten Muster
+          gehören dir — damit darfst du machen, was du willst, auch verkaufen.<br><br>
+          <b>Was nicht frei ist:</b> Albumcover, Bandfotos und fremde Bilder sind urheberrechtlich
+          geschützt. Ein Ausdruck für die eigene Wand ist als Privatkopie gedeckt. Verkaufen,
+          gewerblich nutzen oder öffentlich anbieten ist es nicht. Marken wie das
+          Parental-Advisory-Zeichen dürfen nicht nachgebildet werden; der eingebaute Hinweis-Kasten
+          ist bewusst nur ein neutraler Text.<br><br>
+          <b>Verantwortung:</b> Wer die Werkstatt benutzt, entscheidet selbst, welche Bilder und
+          Texte er einsetzt und was er mit dem Ergebnis macht, und trägt dafür die Verantwortung.
+          Der Ersteller dieser Seite stellt nur das Werkzeug bereit, prüft keine Inhalte und
+          haftet nicht für die Verwendung.<br><br>
+          Diese Hinweise sind eine Orientierung und keine Rechtsberatung.
+        </p>
+      </div>
+    </details>
+
+    <details class="sec">
       <summary>Hilfe</summary>
       <div class="body">
         <p class="hint">
@@ -324,7 +365,7 @@ function showFatal(msg){
   box.textContent="Fehler: "+msg;}
 addEventListener("error",e=>showFatal((e.message||e.type)+"  ·  Zeile "+(e.lineno||"?")));
 addEventListener("unhandledrejection",e=>showFatal(String(e.reason&&e.reason.message||e.reason)));
-const VERSION="10";
+const VERSION="13";
 const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
   (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 
@@ -371,8 +412,10 @@ const state = {
   layout:"standard", colors:null, img2Url:null, fontCustom:null, deko:"none", searchMode:"album", fit:"cover",
   laserImage:"dots", laserGrid:70, laserGamma:1, laserInvert:false, laserPreview:false,
   titleScale:1, listScale:1, gapScale:1, align:"left", overline:"", mat:0, img3Url:null,
+  imgH:0, vAlign:"top", imgFx:"none", fxContrast:1, fxBright:1, quote:"",
+  qrColor:"safe", qrDark:"#000000", qrLight:"#FFFFFF",
 };
-let img=null, img2=null, img3=null, tainted=false, lastImgGeom=null, previewScale=1, sheetOff=0;
+let img=null, imgDraw=null, imgDrawUrl=null, img2=null, img3=null, tainted=false, lastImgGeom=null, previewScale=1, sheetOff=0;
 const DEKO={
   none:"Ohne", frame:"Rahmen", double:"Doppelt", thick:"Dick", half:"Halbrahmen",
   corners:"Ecken", brackets:"Klammern", ticks:"Skala", cross:"Register",
@@ -651,9 +694,9 @@ function drawImageBlock(r,cfg,x,y,w,h){
     if(cfg.fit==="contain"&&!r.vector)r.rect(x,y,w,h,cfg.theme.bg);
     if(r.vector){
       let done=false;
-      if(cfg.laserImage!=="outline")done=drawHalftone(r,cfg,g,img,"a");
+      if(cfg.laserImage!=="outline")done=drawHalftone(r,cfg,g,imgDraw||img,"a");
       if(!done)r.imageAt(null,{x,y,w,h},false,null);
-    }else r.imageAt(img,g,th.gray,cfg.imgUrl);}
+    }else r.imageAt(imgDraw||img,g,th.gray,imgDrawUrl||cfg.imgUrl);}
   else if(!r.vector){r.rect(x,y,w,h,cfg.themeKey==="onyx"?"#1C1C1C":"#E9E9E9");
     r.text("Bild hinzufügen",x+w/2,y+h/2,{size:w*.035,color:th.sub,align:"center"});}
   else r.imageAt(null,{x,y,w,h},false,null);
@@ -674,9 +717,11 @@ function qrFor(text){
 function drawQR(r,cfg,x,y,size){
   const m=qrFor(cfg.qr); if(!m)return 0;
   const n=m.length, quiet=3, cell=size/(n+quiet*2);
-  if(!r.vector)r.rect(x,y,size,size,"#FFFFFF");
+  const f=cfg.qrFarben||{dark:"#000000",light:"#FFFFFF"};
+  const dunkel=r.vector?"#000000":f.dark, hell=f.light;
+  if(!r.vector)r.rect(x,y,size,size,hell);
   for(let iy=0;iy<n;iy++)for(let ix=0;ix<n;ix++)
-    if(m[iy][ix])r.rect(x+(ix+quiet)*cell,y+(iy+quiet)*cell,cell*1.02,cell*1.02,"#000000");
+    if(m[iy][ix])r.rect(x+(ix+quiet)*cell,y+(iy+quiet)*cell,cell*1.02,cell*1.02,dunkel);
   return size;}
 
 /* Passt die Schriftgrösse an, damit nichts über den Rand läuft */
@@ -732,6 +777,12 @@ function drawTextBlock(r,cfg,x,y,w,availH,base){
     const px=(al==="right")?x:x+w-cfg.palette.length*sw;
     cfg.palette.forEach((c,i)=>r.rect(px+i*sw,cy-sh,sw,sh,c));}
   cy+=base*.035; r.line(x,cy,x+w,cy,rule,.35); cy+=base*.045;
+  if(cfg.quote){
+    const qs=base*.030;
+    const Q=fitText(r,"„"+cfg.quote+"“",w,qs,400,.6);
+    r.text(Q.str,al==="center"?x+w/2:al==="right"?x+w:x,cy+Q.size*.8,
+      {size:Q.size,color:sub,align:an});
+    cy+=Q.size*2.1;}
   if(cfg.showWave&&cfg.waveMode==="wide"){
     const wh=base*.10*(cfg.waveH||1);
     drawWave(r,cfg,x,cy,w,wh,ink);
@@ -813,6 +864,25 @@ function drawCenterBlock(r,cfg,x,y,w,base,withWave){
     const qx=al==="left"?x:al==="right"?x+w-size:cx-size/2;
     drawQR(r,cfg,qx,cy+mS*1.4,size);}
 }
+/* Läuft den Textblock trocken durch, um seine Höhe zu kennen */
+function probeRenderer(r){
+  const p={vector:r.vector,maxY:0,
+    measure:(s,o)=>r.measure(s,o),
+    rect(x,y,w,h){p.maxY=Math.max(p.maxY,y+h);},
+    line(x1,y1,x2,y2){p.maxY=Math.max(p.maxY,y1,y2);},
+    dot(x,y,rad){p.maxY=Math.max(p.maxY,y+rad);},
+    text(s,x,y){p.maxY=Math.max(p.maxY,y);},
+    imageAt(){}};
+  return p;}
+function textBlockShift(r,cfg,x,y,w,availH,base){
+  const va=cfg.vAlign||"top";
+  if(va==="top")return 0;
+  const p=probeRenderer(r);
+  drawTextBlock(p,cfg,x,y,w,availH,base);
+  const frei=availH-(p.maxY-y);
+  if(frei<=0)return 0;
+  return va==="center"?frei/2:frei;}
+
 function drawPoster(r,cfg){
   const {W,H}=cfg;
   const mat=Math.max(0,+cfg.mat||0);
@@ -876,9 +946,10 @@ function drawPoster(r,cfg){
     drawTextBlock(r,cfg,pad,ty,cw,H-pad-ty-(cfg.footer?cw*.05:0),cw);
   }else if(L==="trio"){
     const g2=cw*.025, iw=(cw-g2*2)/3, ih=Math.min(iw*cfg.ratio,H*.45);
-    [[img,cfg.imgUrl,0],[img2,cfg.img2Url,1],[img3,cfg.img3Url,2]].forEach(([im,url,i2])=>{
+    [[img,imgDrawUrl||cfg.imgUrl,0],[img2,cfg.img2Url,1],[img3,cfg.img3Url,2]].forEach(([im,url,i2])=>{
       const bx=pad+i2*(iw+g2);
-      if(im){const g3=imgGeom(im,bx,top,iw,ih,i2?1:cfg.zoom,i2?0:cfg.offX,i2?0:cfg.offY,cfg.fit);
+      if(im){if(!i2)im=imgDraw||im;
+        const g3=imgGeom(im,bx,top,iw,ih,i2?1:cfg.zoom,i2?0:cfg.offX,i2?0:cfg.offY,cfg.fit);
         if(r.vector){
           let done=false;
           if(cfg.laserImage!=="outline")done=drawHalftone(r,cfg,g3,im,"t"+i2);
@@ -891,7 +962,7 @@ function drawPoster(r,cfg){
     const ty=top+ih+gap;
     drawTextBlock(r,cfg,pad,ty,cw,H-pad-ty-(cfg.footer?cw*.05:0),cw);
   }else if(L==="portrait"){
-    const ih=Math.min(cw*cfg.ratio,H-top-pad-cw*.34);
+    const ih=cfg.imgH?Math.min(H*cfg.imgH,H-top-pad-cw*.20):Math.min(cw*cfg.ratio,H-top-pad-cw*.34);
     drawImageBlock(r,cfg,pad,top,cw,ih);
     drawCenterBlock(r,cfg,pad,top+ih+gap*.8,cw,cw,cfg.showWave);
   }else if(landscape){
@@ -900,10 +971,12 @@ function drawPoster(r,cfg){
     const tx=pad+iw+cw*.05, tw=cw-iw-cw*.05;
     drawTextBlock(r,cfg,tx,top,tw,H-pad-top-(cfg.footer?cw*.04:0),tw);
   }else{
-    const ih=Math.min(cw*cfg.ratio,H*.62);
-    drawImageBlock(r,cfg,pad,top,cw,ih);
-    const ty=top+ih+gap;
-    drawTextBlock(r,cfg,pad,ty,cw,H-pad-ty-(cfg.footer?cw*.05:0),cw);
+    const ih=cfg.imgH?H*cfg.imgH:Math.min(cw*cfg.ratio,H*.62);
+    drawImageBlock(r,cfg,pad,top,cw,Math.min(ih,H-top-pad-cw*.12));
+    const ty=top+Math.min(ih,H-top-pad-cw*.12)+gap;
+    const av=H-pad-ty-(cfg.footer?cw*.05:0);
+    const sh=textBlockShift(r,cfg,pad,ty,cw,av,cw);
+    drawTextBlock(r,cfg,pad,ty+sh,cw,av-sh,cw);
   }
   if(cfg.footer)r.text(cfg.footer,pad,H-pad*.55,{size:Math.min(cw,ch)*.019,
     color:r.vector?"#000":cfg.theme.sub,tracking:cw*.002});
@@ -990,7 +1063,8 @@ function buildCfg(){
     laserImage:state.laserImage,laserGrid:+state.laserGrid||70,
     laserGamma:+state.laserGamma||1,laserInvert:state.laserInvert,deko:state.deko,
     titleScale:+state.titleScale||1,listScale:+state.listScale||1,gapScale:+state.gapScale||1,
-    align:state.align||"left",overline:state.overline||"",mat:+state.mat||0,img3Url:state.img3Url};
+    align:state.align||"left",overline:state.overline||"",mat:+state.mat||0,img3Url:state.img3Url,
+    imgH:+state.imgH||0,vAlign:state.vAlign||"top",quote:state.quote||"",qrFarben:qrFarben()};
 }
 /* Auto: das Kästchen übernimmt das Seitenverhältnis des Bildes,
    damit nichts weggeschnitten werden muss */
@@ -1023,9 +1097,16 @@ function render(){
   $("sheetInfo").textContent=sh.m?("Bogen inklusive Rand: "+sh.w.toFixed(0)+" × "+sh.h.toFixed(0)+" mm"):"";
   const mins=totalMinutes(cfg.tracks);
   $("trackInfo").textContent=cfg.tracks.length+" Einträge"+(mins?" · "+mins+" min gesamt":"");
-  if(state.showQR&&state.qr){const m=qrFor(state.qr);
-    $("qrMsg").className="msg "+(m?"ok":"bad");
-    $("qrMsg").textContent=m?("QR-Code bereit ("+m.length+" × "+m.length+" Felder)"):"Link zu lang — kürzeren Link verwenden.";}
+  if(state.showQR&&state.qr){
+    const m=qrFor(state.qr), f=cfg.qrFarben;
+    if(!m){$("qrMsg").className="msg bad";$("qrMsg").textContent="Link zu lang — kürzeren Link verwenden.";}
+    else if(f.notfall){$("qrMsg").className="msg warn";
+      $("qrMsg").textContent="Zu wenig Kontrast ("+f.k.toFixed(1)+":1) — der Code wird zur Sicherheit schwarz auf weiss gedruckt.";}
+    else if(f.invertiert){$("qrMsg").className="msg ok";
+      $("qrMsg").textContent="Heller Code auf dunklem Grund, Kontrast "+f.k.toFixed(1)+
+        ":1 — moderne Handys lesen das problemlos.";}
+    else{$("qrMsg").className="msg ok";
+      $("qrMsg").textContent="QR-Code bereit, Kontrast "+f.k.toFixed(1)+":1.";}}
   else $("qrMsg").textContent="";
 }
 
@@ -1060,6 +1141,13 @@ function allChips(){
     ()=>state.searchMode,v=>{state.searchMode=v;
       $("q").placeholder=(v==="band"?"Band oder Interpret suchen …":v==="song"?"Song suchen …":"Album suchen …");
       $("results").innerHTML=""; $("searchMsg").textContent="";});
+  chips($("qrColorChips"),[["safe","Schwarz auf Weiss"],["theme","Posterfarben"],["custom","Eigene"]],
+    ()=>state.qrColor,v=>{state.qrColor=v;
+      $("qrCustom").style.display=v==="custom"?"grid":"none";});
+  chips($("fxChips"),[["none","Original"],["bw","Schwarzweiss"],["duo","Duoton"]],
+    ()=>state.imgFx,v=>{state.imgFx=v;applyFx();});
+  chips($("vAlignChips"),[["top","Oben"],["center","Mittig"],["bottom","Unten"]],
+    ()=>state.vAlign,v=>state.vAlign=v);
   chips($("alignChips"),[["left","Links"],["center","Mittig"],["right","Rechts"]],
     ()=>state.align,v=>state.align=v);
   chips($("laserImageChips"),[["dots","Raster"],["lines","Striche"],["outline","Nur Umriss"]],
@@ -1136,12 +1224,66 @@ function readFile(f){
   const rd=new FileReader();
   rd.onload=()=>{const im=new Image();im.onload=()=>{useImage(im,rd.result,false);msgImg("");};im.src=rd.result;};
   rd.readAsDataURL(f);}
+/* Schwarzweiss, Duoton, Kontrast und Helligkeit werden einmal ins Bild
+   gerechnet — so sieht jeder Export gleich aus. */
+/* Kontrast nach WCAG — darunter liest kein Handy den Code zuverlässig */
+function relLum(hex){
+  const m=/^#?([0-9a-f]{6})$/i.exec(hex||"#000000"); if(!m)return 0;
+  const n=parseInt(m[1],16);
+  const c=[(n>>16)&255,(n>>8)&255,n&255].map(v=>{v/=255;
+    return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4);});
+  return .2126*c[0]+.7152*c[1]+.0722*c[2];}
+function kontrast(a,b){
+  const L1=relLum(a),L2=relLum(b);
+  return (Math.max(L1,L2)+.05)/(Math.min(L1,L2)+.05);}
+function qrFarben(){
+  const th=THEMES[state.theme]||THEMES.classic;
+  const t=state.colors?Object.assign({},th,state.colors):th;
+  let dark="#000000", light="#FFFFFF", modus=state.qrColor||"safe";
+  if(modus==="theme"){dark=t.ink; light=t.bg;}
+  else if(modus==="custom"){dark=state.qrDark||"#000000"; light=state.qrLight||"#FFFFFF";}
+  const k=kontrast(dark,light);
+  const invertiert=relLum(dark)>relLum(light);
+  if(k<4){return {dark:"#000000",light:"#FFFFFF",k,notfall:true,invertiert:false};}
+  return {dark,light,k,notfall:false,invertiert};}
+
+function luma(hex){
+  const m=/^#?([0-9a-f]{6})$/i.exec(hex||"#000000"); if(!m)return 0;
+  const n=parseInt(m[1],16);
+  return .299*((n>>16)&255)+.587*((n>>8)&255)+.114*(n&255);}
+function applyFx(){
+  if(!img){imgDraw=null;imgDrawUrl=null;return;}
+  const fx=state.imgFx||"none", k=+state.fxContrast||1, b=+state.fxBright||1;
+  if(fx==="none"&&k===1&&b===1){imgDraw=img;imgDrawUrl=state.imgUrl;render();return;}
+  const max=1600, sc=Math.min(1,max/Math.max(img.width,img.height));
+  const w=Math.max(1,Math.round(img.width*sc)), h=Math.max(1,Math.round(img.height*sc));
+  const c=document.createElement("canvas"); c.width=w; c.height=h;
+  const x=c.getContext("2d");
+  const filter=[(fx==="bw"||fx==="duo")?"grayscale(1)":"",
+    k!==1?"contrast("+k+")":"", b!==1?"brightness("+b+")":""].filter(Boolean).join(" ");
+  if(filter)x.filter=filter;
+  x.drawImage(img,0,0,w,h);
+  x.filter="none";
+  if(fx==="duo"){
+    const th=THEMES[state.theme], c1=(state.colors&&state.colors.bg)||th.bg,
+      c2=(state.colors&&state.colors.ink)||th.ink;
+    const hell=luma(c1)>=luma(c2)?c1:c2, dunkel=luma(c1)>=luma(c2)?c2:c1;
+    x.globalCompositeOperation="multiply"; x.fillStyle=hell; x.fillRect(0,0,w,h);
+    x.globalCompositeOperation="lighten";  x.fillStyle=dunkel; x.fillRect(0,0,w,h);
+    x.globalCompositeOperation="source-over";}
+  let url=null;
+  try{url=c.toDataURL("image/jpeg",.92);}catch(e){url=null;}
+  if(!url){imgDraw=img;imgDrawUrl=state.imgUrl;render();return;}
+  const im=new Image();
+  im.onload=()=>{imgDraw=im;imgDrawUrl=url;render();};
+  im.src=url;}
+
 function useImage(im,url,remote){
   img=im; state.imgUrl=url; tainted=false;
   try{state.palette=extractPalette(im);}catch(e){state.palette=[];tainted=!!remote;}
   $("paletteWrap").style.display=state.palette.length?"block":"none";
   $("swatches").innerHTML=state.palette.map(c=>`<i style="background:${c}"></i>`).join("");
-  waveColorChips(); render();}
+  waveColorChips(); applyFx();}
 async function loadCoverFromUrl(url){
   if(!url)return;
   lastCoverUrl=url; $("openCoverBtn").style.display="none"; msgImg("Bild wird geladen …");
@@ -1267,6 +1409,16 @@ slider("titleScale","titleScale"," %",100);
 slider("listScale","listScale"," %",100);
 slider("gapScale","gapScale"," %",100);
 slider("mat","mat"," mm",0);
+bind("quote","quote");
+["qrDark","qrLight"].forEach(id=>{
+  $(id).value=state[id];
+  $(id).oninput=e=>{state[id]=e.target.value; state.qrColor="custom"; allChips();
+    $("qrCustom").style.display="grid"; render();};});
+$("imgH").oninput=e=>{const v=+e.target.value; state.imgH=v?v/100:0;
+  $("imgHVal").textContent=v?v+" % der Seite":"Automatisch"; render();};
+["fxContrast","fxBright"].forEach(id=>{
+  $(id).oninput=e=>{state[id]=+e.target.value/100;
+    $(id+"Val").textContent=e.target.value+" %"; applyFx();};});
 
 /* Wellenform aus Audio */
 $("audioBtn").onclick=()=>$("audioFile").click();
@@ -1633,6 +1785,14 @@ function syncUI(){
   $("waveH").value=Math.round((state.waveH||1)*100);
   $("waveHVal").textContent=Math.round((state.waveH||1)*100)+" %";
   $("cw").value=state.cw; $("chh").value=state.ch;
+  $("qrDark").value=state.qrDark||"#000000"; $("qrLight").value=state.qrLight||"#FFFFFF";
+  $("qrCustom").style.display=(state.qrColor==="custom")?"grid":"none";
+  $("imgH").value=Math.round((state.imgH||0)*100);
+  $("imgHVal").textContent=state.imgH?Math.round(state.imgH*100)+" % der Seite":"Automatisch";
+  $("fxContrast").value=Math.round((state.fxContrast||1)*100);
+  $("fxContrastVal").textContent=Math.round((state.fxContrast||1)*100)+" %";
+  $("fxBright").value=Math.round((state.fxBright||1)*100);
+  $("fxBrightVal").textContent=Math.round((state.fxBright||1)*100)+" %";
   $("titleScale").value=Math.round((state.titleScale||1)*100);
   $("titleScaleVal").textContent=Math.round((state.titleScale||1)*100)+" %";
   $("listScale").value=Math.round((state.listScale||1)*100);
@@ -1646,6 +1806,32 @@ function syncUI(){
   ["laserInvert","laserPreview"].forEach(k=>{if($(k))$(k).checked=!!state[k];});
   fsel.value=state.format;
   syncCrop(); syncColors(); allChips(); ensureWave(); drawWaveEditor();}
+
+/* ===================== Hinweis beim ersten Öffnen ===================== */
+(function(){
+  const KEY="poster-werkstatt-hinweis-1";
+  let gesehen=false;
+  try{gesehen=localStorage.getItem(KEY)==="ja";}catch(e){}
+  if(gesehen)return;
+  const box=document.createElement("div");
+  box.style.cssText="position:fixed;inset:0;z-index:80;background:rgba(6,8,11,.92);"+
+    "display:flex;align-items:center;justify-content:center;padding:22px";
+  box.innerHTML='<div style="max-width:460px;background:#14171C;border:1px solid #262B33;'+
+    'border-radius:14px;padding:22px">'+
+    '<div style="font-weight:700;font-size:16px;margin-bottom:10px">Nur für den privaten Gebrauch</div>'+
+    '<p style="font-size:13.5px;line-height:1.6;color:#B7BEC9;margin:0 0 14px">'+
+    'Alles läuft auf deinem Gerät, es werden keine Daten übertragen.<br><br>'+
+    'Eigene Fotos und die erzeugten Muster gehören dir. Fremde Albumcover und Bandfotos '+
+    'sind geschützt: für die eigene Wand in Ordnung, verkaufen nicht. '+
+    'Was du hochlädst und was du mit dem Ergebnis machst, liegt in deiner Verantwortung.'+
+    '</p><button id="hinweisOk" style="width:100%;padding:12px;border:0;border-radius:8px;'+
+    'background:#5FB8FF;color:#08131C;font-weight:700;font-size:15px;cursor:pointer">'+
+    'Verstanden</button></div>';
+  document.body.appendChild(box);
+  box.querySelector("#hinweisOk").onclick=()=>{
+    try{localStorage.setItem(KEY,"ja");}catch(e){}
+    box.remove();};
+})();
 
 /* ===================== Als App ablegen ===================== */
 (function(){
@@ -1687,7 +1873,7 @@ const PRESETS={
     dateLabel:"Veröffentlicht",dateValue:"25. November 2026",footer:"",ratio:"1:1",
     waveMode:"small",waveStyle:"mirror",numbered:true,
     tracksText:"Erster Song 3:50\nZweiter Song 4:09\nDritter Song 3:40\nVierter Song 3:39"}},
-  hochzeit:{name:"Hochzeit",d:{title:"Anna & Max",artist:"14. Juli 2026 · Luzern",
+  hochzeit:{name:"Hochzeit",d:{vAlign:"center",imgH:.62,quote:"",title:"Anna & Max",artist:"14. Juli 2026 · Luzern",
     dateLabel:"Unser Lied",dateValue:"Perfect — Ed Sheeran",footer:"Danke, dass ihr dabei wart",
     ratio:"4:5",waveMode:"wide",waveStyle:"mirror",numbered:false,
     tracksText:"Erstes Treffen 2019\nZusammengezogen 2021\nVerlobt am Meer 2024\nJa-Wort 2026"}},

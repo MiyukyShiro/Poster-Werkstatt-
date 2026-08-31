@@ -1,5 +1,5 @@
 /* Poster-Werkstatt — offline verfügbar, aber Updates kommen sofort an. */
-const CACHE = "poster-werkstatt-v10";
+const CACHE = "poster-werkstatt-v13";
 const FILES = ["./", "./index.html", "./manifest.webmanifest"];
 
 self.addEventListener("install", e => {
