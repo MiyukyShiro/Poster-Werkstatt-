@@ -311,7 +311,7 @@ function showFatal(msg){
   box.textContent="Fehler: "+msg;}
 addEventListener("error",e=>showFatal((e.message||e.type)+"  ·  Zeile "+(e.lineno||"?")));
 addEventListener("unhandledrejection",e=>showFatal(String(e.reason&&e.reason.message||e.reason)));
-const VERSION="8";
+const VERSION="9";
 const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
   (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 
@@ -730,16 +730,36 @@ function drawTextBlock(r,cfg,x,y,w,availH,base){
     drawWave(r,cfg,mx,my-wh/2,metaW,wh,ink);
     my+=wh*.6+base*.03;}
   const lS=ts*.78,vS=ts*.95;
-  [cfg.metaLeft,cfg.metaRight].forEach(m=>{if(!m||!m.value)return;
-    r.text(m.label.toUpperCase(),mx,my,{size:lS,color:sub,tracking:lS*.12});
-    my+=vS*1.35; r.text(m.value,mx,my,{size:vS,color:ink}); my+=vS*2;});
+  const felder=[cfg.metaLeft,cfg.metaRight].filter(m=>m&&m.value);
+  const metaTop=my, bottom=y+availH;
+  const felderH=felder.length*(vS*1.35+vS*2);
+
+  /* Der QR-Code sucht sich den Platz, der übrig ist: bevorzugt unter den
+     Infofeldern, sonst rechts daneben. Er überdeckt nie den Text. */
+  let qSize=0, qx=0, qy=0, metaMaxW=metaW;
   if(cfg.showQR&&cfg.qr){
-    const bottom=y+availH;
-    let size=Math.min(metaW,base*.17);
-    let qy=Math.min(my,bottom-size);
-    if(qy<y){qy=y;}
-    if(qy+size>bottom)size=bottom-qy;
-    if(size>8)drawQR(r,cfg,x+w-size,qy,size);}
+    const wunsch=Math.min(metaW,base*.17);
+    const drunter=bottom-(metaTop+felderH)-base*.012;
+    if(drunter>=Math.min(wunsch,base*.09)){
+      qSize=Math.min(wunsch,drunter);
+      qx=x+w-qSize; qy=bottom-qSize;
+    }else{
+      qSize=Math.min(metaW*.52,base*.115,Math.max(0,bottom-metaTop));
+      qx=x+w-qSize; qy=metaTop-vS*.9;
+      metaMaxW=metaW-qSize-base*.012;
+    }
+    if(qSize<base*.05)qSize=0;
+  }
+
+  felder.forEach(m=>{
+    const L=fitText(r,m.label.toUpperCase(),metaMaxW,lS,400,.7);
+    r.text(L.str,mx,my,{size:L.size,color:sub,tracking:L.size*.12});
+    my+=vS*1.35;
+    const V=fitText(r,m.value,metaMaxW,vS,400,.7);
+    r.text(V.str,mx,my,{size:V.size,color:ink});
+    my+=vS*2;});
+
+  if(qSize>0)drawQR(r,cfg,qx,Math.max(y,qy),qSize);
 }
 /* Mittiger Textblock für Minimal und Polaroid */
 function drawCenterBlock(r,cfg,x,y,w,base,withWave){
