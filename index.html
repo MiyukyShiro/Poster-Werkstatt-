@@ -115,6 +115,8 @@
           <input type="text" id="dateLabel" placeholder="Beschriftung">
           <input type="text" id="dateValue" placeholder="Inhalt">
         </div>
+        <label class="f">Zeile über dem Bild</label>
+        <input type="text" id="overline" placeholder="optional, z. B. der Interpret">
         <label class="f">Fusszeile</label><input type="text" id="footer" placeholder="optional">
 
         <label class="f">Liste <span class="val" id="trackInfo"></span></label>
@@ -130,9 +132,11 @@
           <button class="chip" id="pickBtn">Bild wählen</button>
           <button class="chip" id="genBtn">Muster</button>
           <button class="chip" id="pick2Btn">2. Bild</button>
+          <button class="chip" id="pick3Btn">3. Bild</button>
         </div>
         <input type="file" id="file" accept="image/*" hidden>
         <input type="file" id="file2" accept="image/*" hidden>
+        <input type="file" id="file3" accept="image/*" hidden>
         <div class="row" style="margin-top:9px">
           <input type="text" id="coverUrl" placeholder="oder Bild-Adresse">
           <button class="chip" id="coverBtn" style="flex:0 0 auto">Laden</button>
@@ -171,6 +175,15 @@
         <p class="hint" id="layoutHint"></p>
         <label class="f">Stil</label><div class="chips" id="themeChips"></div>
         <label class="f">Deko</label><div class="chips" id="dekoChips"></div>
+        <label class="f">Textausrichtung</label><div class="chips" id="alignChips"></div>
+        <label class="f">Titelgrösse <span class="val" id="titleScaleVal">100 %</span></label>
+        <input type="range" id="titleScale" min="50" max="200" value="100">
+        <label class="f">Listengrösse <span class="val" id="listScaleVal">100 %</span></label>
+        <input type="range" id="listScale" min="60" max="160" value="100">
+        <label class="f">Abstand Bild zu Text <span class="val" id="gapScaleVal">100 %</span></label>
+        <input type="range" id="gapScale" min="20" max="260" value="100">
+        <label class="f">Passepartout <span class="val" id="matVal">0 mm</span></label>
+        <input type="range" id="mat" min="0" max="40" value="0">
         <label class="f">Farben</label>
         <div class="colorgrid">
           <div><label>Hintergrund</label><input type="color" id="cBg"></div>
@@ -311,7 +324,7 @@ function showFatal(msg){
   box.textContent="Fehler: "+msg;}
 addEventListener("error",e=>showFatal((e.message||e.type)+"  ·  Zeile "+(e.lineno||"?")));
 addEventListener("unhandledrejection",e=>showFatal(String(e.reason&&e.reason.message||e.reason)));
-const VERSION="9";
+const VERSION="10";
 const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
   (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 
@@ -357,8 +370,9 @@ const state = {
   waveStyle:"mirror", waveMode:"small", waveN:34, waveH:1, waveColor:null,
   layout:"standard", colors:null, img2Url:null, fontCustom:null, deko:"none", searchMode:"album", fit:"cover",
   laserImage:"dots", laserGrid:70, laserGamma:1, laserInvert:false, laserPreview:false,
+  titleScale:1, listScale:1, gapScale:1, align:"left", overline:"", mat:0, img3Url:null,
 };
-let img=null, img2=null, tainted=false, lastImgGeom=null, previewScale=1, sheetOff=0;
+let img=null, img2=null, img3=null, tainted=false, lastImgGeom=null, previewScale=1, sheetOff=0;
 const DEKO={
   none:"Ohne", frame:"Rahmen", double:"Doppelt", thick:"Dick", half:"Halbrahmen",
   corners:"Ecken", brackets:"Klammern", ticks:"Skala", cross:"Register",
@@ -370,6 +384,8 @@ const LAYOUTS={
   minimal:{name:"Minimal",hint:"Nur Titel, Welle und Infozeile — keine Liste. Alles mittig."},
   polaroid:{name:"Polaroid",hint:"Bild in einem breiten Rahmen, Text mittig darunter. Keine Liste."},
   duo:{name:"Doppelbild",hint:"Zwei Bilder nebeneinander, darunter der übliche Textblock."},
+  trio:{name:"Dreier",hint:"Drei Bilder nebeneinander — Bild 2 und 3 unter „Bild“ laden."},
+  portrait:{name:"Porträt",hint:"Grosses Bild, darunter nur Name und Datum. Keine Liste."},
 };
 
 /* ========================= Hilfsfunktionen ======================== */
@@ -379,6 +395,11 @@ function parseTracks(t){return t.split("\n").map(l=>l.trim()).filter(Boolean).ma
   return {name:line,time};});}
 function totalMinutes(tr){let s=0;tr.forEach(t=>{const m=t.time.match(/^(\d{1,3}):(\d{2})$/);
   if(m)s+=+m[1]*60+ +m[2];});return s?Math.round(s/60):0;}
+function mixHex(a,b,t){
+  const p=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||"#000000");const n=m?parseInt(m[1],16):0;
+    return [(n>>16)&255,(n>>8)&255,n&255];};
+  const A=p(a),B=p(b);
+  return "#"+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,"0")).join("");}
 function hexToRgb(h){
   const m=/^#?([0-9a-f]{6})$/i.exec(h||"#ffffff");
   if(!m)return "255,255,255";
@@ -693,17 +714,22 @@ function drawWave(r,cfg,x,y,w,h,ink){
 function drawTextBlock(r,cfg,x,y,w,availH,base){
   const th=cfg.theme, ink=r.vector?"#000":th.ink, sub=r.vector?"#000":th.sub, rule=r.vector?"#000":th.rule;
   const tracks=cfg.tracks;
-  const tS0=base*.098, aS=base*.041;
+  const ts0=(cfg.titleScale||1);
+  const tS0=base*.098*ts0, aS=base*.041*Math.min(1.4,ts0);
+  const al=cfg.align||"left";
+  const ax=al==="center"?x+w/2:al==="right"?x+w:x;
+  const an=al==="center"?"center":al==="right"?"right":"left";
   const T=fitText(r,cfg.title||"Titel",w,tS0,700,.42);
   let cy=y+T.size*.78;
-  r.text(T.str,x,cy,{size:T.size,weight:700,color:ink});
+  r.text(T.str,ax,cy,{size:T.size,weight:700,color:ink,align:an});
   const palW=(cfg.showPalette&&cfg.palette.length&&!r.vector)?
     Math.min(base*.042,w/6)*cfg.palette.length+base*.02:0;
   const A=fitText(r,cfg.artist||"Untertitel",w-palW,aS,400,.6);
   cy+=aS*1.5;
-  r.text(A.str,x,cy,{size:A.size,color:sub});
+  r.text(A.str,ax,cy,{size:A.size,color:sub,align:an});
   if(cfg.showPalette&&cfg.palette.length&&!r.vector){
-    const sw=Math.min(base*.042,w/6),sh=sw*.62,px=x+w-cfg.palette.length*sw;
+    const sw=Math.min(base*.042,w/6),sh=sw*.62;
+    const px=(al==="right")?x:x+w-cfg.palette.length*sw;
     cfg.palette.forEach((c,i)=>r.rect(px+i*sw,cy-sh,sw,sh,c));}
   cy+=base*.035; r.line(x,cy,x+w,cy,rule,.35); cy+=base*.045;
   if(cfg.showWave&&cfg.waveMode==="wide"){
@@ -713,7 +739,7 @@ function drawTextBlock(r,cfg,x,y,w,availH,base){
 
   const metaW=w*.3,gap=base*.035,tw=w-metaW-gap,n=tracks.length;
   const nCols=n>22?3:n>8?2:1, colW=(tw-gap*(nCols-1))/nCols, rows=Math.ceil(n/nCols)||1;
-  let ts=base*.0215, lh=ts*1.72;
+  let ts=base*.0215*(cfg.listScale||1), lh=ts*1.72;
   const room=availH-(cy-y);
   if(rows*lh>room){const f=room/(rows*lh);ts*=f;lh*=f;}
   tracks.forEach((t,i)=>{
@@ -764,29 +790,54 @@ function drawTextBlock(r,cfg,x,y,w,availH,base){
 /* Mittiger Textblock für Minimal und Polaroid */
 function drawCenterBlock(r,cfg,x,y,w,base,withWave){
   const th=cfg.theme, ink=r.vector?"#000":th.ink, sub=r.vector?"#000":th.sub;
-  const cx=x+w/2, tS0=base*.105, aS=base*.040;
+  const ts0=(cfg.titleScale||1);
+  const tS0=base*.105*ts0, aS=base*.040*Math.min(1.4,ts0);
+  const al=cfg.align||"center";
+  const cx=al==="left"?x:al==="right"?x+w:x+w/2;
+  const an=al==="left"?"left":al==="right"?"right":"center";
   const T=fitText(r,cfg.title||"Titel",w,tS0,700,.42);
   let cy=y+T.size*.8;
-  r.text(T.str,cx,cy,{size:T.size,weight:700,color:ink,align:"center"});
+  r.text(T.str,cx,cy,{size:T.size,weight:700,color:ink,align:an});
   const A=fitText(r,cfg.artist||"Untertitel",w,aS,400,.6);
   cy+=aS*1.6;
-  r.text(A.str,cx,cy,{size:A.size,color:sub,align:"center",tracking:aS*.04});
+  r.text(A.str,cx,cy,{size:A.size,color:sub,align:an,tracking:aS*.04});
   if(withWave&&cfg.showWave){
     const wh=base*.09*(cfg.waveH||1);
     cy+=base*.03; drawWave(r,cfg,x+w*.08,cy,w*.84,wh,ink); cy+=wh+base*.035;}
   const mS=base*.022;
   [cfg.metaLeft,cfg.metaRight].forEach(m=>{if(!m||!m.value)return;
     cy+=mS*1.6;
-    r.text(m.label.toUpperCase()+" · "+m.value,cx,cy,{size:mS,color:sub,align:"center",tracking:mS*.1});});
+    r.text(m.label.toUpperCase()+" · "+m.value,cx,cy,{size:mS,color:sub,align:an,tracking:mS*.1});});
   if(cfg.showQR&&cfg.qr){
     const size=Math.min(w*.22,base*.17);
-    drawQR(r,cfg,cx-size/2,cy+mS*1.4,size);}
+    const qx=al==="left"?x:al==="right"?x+w-size:cx-size/2;
+    drawQR(r,cfg,qx,cy+mS*1.4,size);}
 }
 function drawPoster(r,cfg){
-  const {W,H,pad}=cfg;
-  if(!r.vector)r.rect(0,0,W,H,cfg.theme.bg);
+  const {W,H}=cfg;
+  const mat=Math.max(0,+cfg.mat||0);
+  const pad=(+cfg.pad||0)+mat;
+  if(!r.vector){
+    r.rect(0,0,W,H,cfg.theme.bg);
+    if(mat>0){
+      r.rect(mat*.55,mat*.55,W-mat*1.1,H-mat*1.1,mixHex(cfg.theme.bg,cfg.theme.ink,.06));
+      r.line(mat*.55,mat*.55,W-mat*.55,mat*.55,cfg.theme.rule,.25);
+      r.line(W-mat*.55,mat*.55,W-mat*.55,H-mat*.55,cfg.theme.rule,.25);
+      r.line(W-mat*.55,H-mat*.55,mat*.55,H-mat*.55,cfg.theme.rule,.25);
+      r.line(mat*.55,H-mat*.55,mat*.55,mat*.55,cfg.theme.rule,.25);}}
   const cw=W-pad*2, ch=H-pad*2, landscape=W>H*1.05;
   const L=cfg.layout||"standard";
+  const gap=cw*.055*(cfg.gapScale||1);
+
+  /* Zeile über dem Bild */
+  let top=pad;
+  if(cfg.overline){
+    const os=cw*.028, al=cfg.align||"left";
+    const ox2=al==="center"?pad+cw/2:al==="right"?pad+cw:pad;
+    const an2=al==="center"?"center":al==="right"?"right":"left";
+    r.text(cfg.overline,ox2,pad+os*.85,
+      {size:os,color:r.vector?"#000":cfg.theme.sub,align:an2,tracking:os*.14});
+    top=pad+os*2.1;}
 
   if(L==="full"){
     drawImageBlock(r,cfg,0,0,W,H);
@@ -805,33 +856,53 @@ function drawPoster(r,cfg){
     const frame=cw*.075;
     if(!r.vector)r.rect(pad,pad,cw,ch,cfg.theme.bg);
     const iw=cw-frame*2, ih=Math.min(iw*cfg.ratio,ch-frame*2-cw*.30);
-    drawImageBlock(r,cfg,pad+frame,pad+frame,iw,ih);
+    drawImageBlock(r,cfg,pad+frame,Math.max(top,pad+frame),iw,ih);
     drawCenterBlock(r,cfg,pad+frame,pad+frame+ih+cw*.05,iw,cw*.92,true);
     if(r.vector){r.line(pad,pad,pad+cw,pad,"#000",.2);r.line(pad+cw,pad,pad+cw,pad+ch,"#000",.2);
       r.line(pad+cw,pad+ch,pad,pad+ch,"#000",.2);r.line(pad,pad+ch,pad,pad,"#000",.2);}
   }else if(L==="duo"){
-    const gap=cw*.03, iw=(cw-gap)/2, ih=Math.min(iw*cfg.ratio,H*.5);
-    drawImageBlock(r,cfg,pad,pad,iw,ih);
-    if(img2){const g=imgGeom(img2,pad+iw+gap,pad,iw,ih,1,0,0,cfg.fit);
+    const g2=cw*.03, iw=(cw-g2)/2, ih=Math.min(iw*cfg.ratio,H*.5);
+    drawImageBlock(r,cfg,pad,top,iw,ih);
+    if(img2){const g=imgGeom(img2,pad+iw+g2,top,iw,ih,1,0,0,cfg.fit);
       if(r.vector){
         let done=false;
         if(cfg.laserImage!=="outline")done=drawHalftone(r,cfg,g,img2,"b");
         if(!done)r.imageAt(null,{x:g.x,y:g.y,w:g.w,h:g.h},false,null);
       }else r.imageAt(img2,g,cfg.theme.gray,cfg.img2Url);}
-    else if(!r.vector){r.rect(pad+iw+gap,pad,iw,ih,cfg.themeKey==="onyx"?"#1C1C1C":"#E9E9E9");
-      r.text("Zweites Bild",pad+iw+gap+iw/2,pad+ih/2,{size:iw*.06,color:cfg.theme.sub,align:"center"});}
-    else r.imageAt(null,{x:pad+iw+gap,y:pad,w:iw,h:ih},false,null);
-    const ty=pad+ih+cw*.055;
+    else if(!r.vector){r.rect(pad+iw+g2,top,iw,ih,cfg.themeKey==="onyx"?"#1C1C1C":"#E9E9E9");
+      r.text("Zweites Bild",pad+iw+g2+iw/2,top+ih/2,{size:iw*.06,color:cfg.theme.sub,align:"center"});}
+    else r.imageAt(null,{x:pad+iw+g2,y:top,w:iw,h:ih},false,null);
+    const ty=top+ih+gap;
     drawTextBlock(r,cfg,pad,ty,cw,H-pad-ty-(cfg.footer?cw*.05:0),cw);
+  }else if(L==="trio"){
+    const g2=cw*.025, iw=(cw-g2*2)/3, ih=Math.min(iw*cfg.ratio,H*.45);
+    [[img,cfg.imgUrl,0],[img2,cfg.img2Url,1],[img3,cfg.img3Url,2]].forEach(([im,url,i2])=>{
+      const bx=pad+i2*(iw+g2);
+      if(im){const g3=imgGeom(im,bx,top,iw,ih,i2?1:cfg.zoom,i2?0:cfg.offX,i2?0:cfg.offY,cfg.fit);
+        if(r.vector){
+          let done=false;
+          if(cfg.laserImage!=="outline")done=drawHalftone(r,cfg,g3,im,"t"+i2);
+          if(!done)r.imageAt(null,{x:bx,y:top,w:iw,h:ih},false,null);
+        }else{if(cfg.fit==="contain")r.rect(bx,top,iw,ih,cfg.theme.bg);
+          r.imageAt(im,g3,cfg.theme.gray,url);}}
+      else if(!r.vector){r.rect(bx,top,iw,ih,cfg.themeKey==="onyx"?"#1C1C1C":"#E9E9E9");
+        r.text("Bild "+(i2+1),bx+iw/2,top+ih/2,{size:iw*.09,color:cfg.theme.sub,align:"center"});}
+      else r.imageAt(null,{x:bx,y:top,w:iw,h:ih},false,null);});
+    const ty=top+ih+gap;
+    drawTextBlock(r,cfg,pad,ty,cw,H-pad-ty-(cfg.footer?cw*.05:0),cw);
+  }else if(L==="portrait"){
+    const ih=Math.min(cw*cfg.ratio,H-top-pad-cw*.34);
+    drawImageBlock(r,cfg,pad,top,cw,ih);
+    drawCenterBlock(r,cfg,pad,top+ih+gap*.8,cw,cw,cfg.showWave);
   }else if(landscape){
     const iw=cw*.46, ih=Math.min(iw*cfg.ratio,ch);
-    drawImageBlock(r,cfg,pad,pad,iw,ih);
+    drawImageBlock(r,cfg,pad,top,iw,ih);
     const tx=pad+iw+cw*.05, tw=cw-iw-cw*.05;
-    drawTextBlock(r,cfg,tx,pad,tw,ch-(cfg.footer?cw*.04:0),tw);
+    drawTextBlock(r,cfg,tx,top,tw,H-pad-top-(cfg.footer?cw*.04:0),tw);
   }else{
     const ih=Math.min(cw*cfg.ratio,H*.62);
-    drawImageBlock(r,cfg,pad,pad,cw,ih);
-    const ty=pad+ih+cw*.055;
+    drawImageBlock(r,cfg,pad,top,cw,ih);
+    const ty=top+ih+gap;
     drawTextBlock(r,cfg,pad,ty,cw,H-pad-ty-(cfg.footer?cw*.05:0),cw);
   }
   if(cfg.footer)r.text(cfg.footer,pad,H-pad*.55,{size:Math.min(cw,ch)*.019,
@@ -917,7 +988,9 @@ function buildCfg(){
     waveStyle:state.waveStyle,waveMode:state.waveMode,waveN:+state.waveN||34,
     waveH:+state.waveH||1,waveColor:state.waveColor,
     laserImage:state.laserImage,laserGrid:+state.laserGrid||70,
-    laserGamma:+state.laserGamma||1,laserInvert:state.laserInvert,deko:state.deko};
+    laserGamma:+state.laserGamma||1,laserInvert:state.laserInvert,deko:state.deko,
+    titleScale:+state.titleScale||1,listScale:+state.listScale||1,gapScale:+state.gapScale||1,
+    align:state.align||"left",overline:state.overline||"",mat:+state.mat||0,img3Url:state.img3Url};
 }
 /* Auto: das Kästchen übernimmt das Seitenverhältnis des Bildes,
    damit nichts weggeschnitten werden muss */
@@ -987,6 +1060,8 @@ function allChips(){
     ()=>state.searchMode,v=>{state.searchMode=v;
       $("q").placeholder=(v==="band"?"Band oder Interpret suchen …":v==="song"?"Song suchen …":"Album suchen …");
       $("results").innerHTML=""; $("searchMsg").textContent="";});
+  chips($("alignChips"),[["left","Links"],["center","Mittig"],["right","Rechts"]],
+    ()=>state.align,v=>state.align=v);
   chips($("laserImageChips"),[["dots","Raster"],["lines","Striche"],["outline","Nur Umriss"]],
     ()=>state.laserImage,v=>state.laserImage=v);
 }
@@ -1184,6 +1259,14 @@ $("laserGrid").oninput=e=>{state.laserGrid=+e.target.value;$("laserGridVal").tex
 $("laserGamma").oninput=e=>{state.laserGamma=+e.target.value/100;
   $("laserGammaVal").textContent=e.target.value+" %";render();};
 ["laserInvert","laserPreview"].forEach(k=>bind(k,k));
+bind("overline","overline");
+function slider(id,key,suffix,teiler){
+  $(id).oninput=e=>{state[key]=teiler?+e.target.value/teiler:+e.target.value;
+    $(id+"Val").textContent=e.target.value+suffix; render();};}
+slider("titleScale","titleScale"," %",100);
+slider("listScale","listScale"," %",100);
+slider("gapScale","gapScale"," %",100);
+slider("mat","mat"," mm",0);
 
 /* Wellenform aus Audio */
 $("audioBtn").onclick=()=>$("audioFile").click();
@@ -1493,16 +1576,22 @@ $("fontFile").onchange=async e=>{
     $("fontMsg").textContent="Schrift nicht lesbar. TTF, OTF oder WOFF versuchen.";}};
 
 /* ===================== Zweites Bild ===================== */
+function nebenBild(nr,input){
+  $(input).onchange=e=>{
+    const f=e.target.files[0]; if(!f||!f.type.startsWith("image/"))return;
+    const rd=new FileReader();
+    rd.onload=()=>{const im=new Image();
+      im.onload=()=>{
+        if(nr===2){img2=im;state.img2Url=rd.result;
+          if(state.layout!=="duo"&&state.layout!=="trio"){state.layout="duo";allChips();}}
+        else{img3=im;state.img3Url=rd.result;
+          if(state.layout!=="trio"){state.layout="trio";allChips();}}
+        render();};
+      im.src=rd.result;};
+    rd.readAsDataURL(f);};}
 $("pick2Btn").onclick=()=>$("file2").click();
-$("file2").onchange=e=>{
-  const f=e.target.files[0]; if(!f||!f.type.startsWith("image/"))return;
-  const rd=new FileReader();
-  rd.onload=()=>{const im=new Image();
-    im.onload=()=>{img2=im;state.img2Url=rd.result;
-      if(state.layout!=="duo"){state.layout="duo";allChips();}
-      render();};
-    im.src=rd.result;};
-  rd.readAsDataURL(f);};
+$("pick3Btn").onclick=()=>$("file3").click();
+nebenBild(2,"file2"); nebenBild(3,"file3");
 
 /* ===================== Rückgängig ===================== */
 let hist=[], future=[], histTimer=null, applying=false;
@@ -1544,6 +1633,13 @@ function syncUI(){
   $("waveH").value=Math.round((state.waveH||1)*100);
   $("waveHVal").textContent=Math.round((state.waveH||1)*100)+" %";
   $("cw").value=state.cw; $("chh").value=state.ch;
+  $("titleScale").value=Math.round((state.titleScale||1)*100);
+  $("titleScaleVal").textContent=Math.round((state.titleScale||1)*100)+" %";
+  $("listScale").value=Math.round((state.listScale||1)*100);
+  $("listScaleVal").textContent=Math.round((state.listScale||1)*100)+" %";
+  $("gapScale").value=Math.round((state.gapScale||1)*100);
+  $("gapScaleVal").textContent=Math.round((state.gapScale||1)*100)+" %";
+  $("mat").value=state.mat||0; $("matVal").textContent=(state.mat||0)+" mm";
   $("laserGrid").value=state.laserGrid||70; $("laserGridVal").textContent=state.laserGrid||70;
   $("laserGamma").value=Math.round((state.laserGamma||1)*100);
   $("laserGammaVal").textContent=Math.round((state.laserGamma||1)*100)+" %";
@@ -1868,6 +1964,8 @@ function tplRender(){
       else{img=null;}
       if(state.img2Url){const im=new Image();im.onload=()=>{img2=im;render();};im.src=state.img2Url;}
       else{img2=null;}
+      if(state.img3Url){const im=new Image();im.onload=()=>{img3=im;render();};im.src=state.img3Url;}
+      else{img3=null;}
       render();};
     const d=document.createElement("button"); d.className="del"; d.textContent="✕";
     d.onclick=()=>{const l2=tplRead();l2.splice(i,1);tplWrite(l2);tplRender();};
