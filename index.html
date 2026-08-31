@@ -83,7 +83,7 @@
 <body>
 <div class="app">
   <div class="stage">
-    <div class="stagebar"><span>Poster-Werkstatt</span><span id="dims">210 × 297 mm</span></div>
+    <div class="stagebar"><span id="brand">Poster-Werkstatt</span><span id="dims">210 × 297 mm</span></div>
     <canvas id="preview"></canvas>
     <div class="stagebtns">
       <button id="undoBtn" title="Rückgängig (Strg+Z)">↶</button>
@@ -266,6 +266,7 @@
         </div>
         <div id="tplList"></div>
         <div class="msg" id="tplMsg"></div>
+        <button class="b2" id="freshBtn">Neueste Fassung holen</button>
         <button class="b2" id="installBtn" style="display:none">Auf dem Startbildschirm ablegen</button>
         <div class="msg" id="pwaMsg"></div>
       </div>
@@ -310,6 +311,7 @@ function showFatal(msg){
   box.textContent="Fehler: "+msg;}
 addEventListener("error",e=>showFatal((e.message||e.type)+"  ·  Zeile "+(e.lineno||"?")));
 addEventListener("unhandledrejection",e=>showFatal(String(e.reason&&e.reason.message||e.reason)));
+const VERSION="8";
 const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
   (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 
@@ -1538,10 +1540,24 @@ function syncUI(){
     l.href=URL.createObjectURL(new Blob([JSON.stringify(man)],{type:"application/manifest+json"}));
     document.head.appendChild(l);
   }catch(e){}
-  if("serviceWorker" in navigator && /^https?:/.test(location.protocol))
-    navigator.serviceWorker.register("sw.js").then(()=>{
+  if("serviceWorker" in navigator && /^https?:/.test(location.protocol)){
+    navigator.serviceWorker.register("sw.js").then(reg=>{
+      try{reg.update();}catch(e){}
       $("pwaMsg").className="msg ok";
-      $("pwaMsg").textContent="Offline-Betrieb eingerichtet.";}).catch(()=>{});
+      $("pwaMsg").textContent="Offline-Betrieb eingerichtet.";
+    }).catch(()=>{});
+    let neugeladen=false;
+    navigator.serviceWorker.addEventListener("controllerchange",()=>{
+      if(neugeladen)return; neugeladen=true; location.reload();});}
+  $("freshBtn").onclick=async()=>{
+    $("pwaMsg").className="msg"; $("pwaMsg").textContent="Suche neue Fassung …";
+    try{
+      if(window.caches){const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)));}
+      if(navigator.serviceWorker){
+        const regs=await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r=>r.unregister()));}
+    }catch(e){}
+    location.reload(true);};
   let deferred=null;
   addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e;
     $("installBtn").style.display="block";});
@@ -1847,6 +1863,7 @@ $("tplSave").onclick=()=>{
 tplRender();
 
 if(IOS)$("iosHint").style.display="block";
+$("brand").textContent="Poster-Werkstatt · Fassung "+VERSION;
 addEventListener("resize",()=>{render();drawWaveEditor();});
 syncCrop(); syncColors(); ensureWave(); drawWaveEditor();
 render();
