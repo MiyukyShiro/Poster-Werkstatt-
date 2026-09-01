@@ -509,17 +509,21 @@ function showFatal(msg){
   box.textContent="Fehler: "+msg;}
 addEventListener("error",e=>showFatal((e.message||e.type)+"  ·  Zeile "+(e.lineno||"?")));
 addEventListener("unhandledrejection",e=>showFatal(String(e.reason&&e.reason.message||e.reason)));
-const VERSION="30";
+const VERSION="32";
 
 /* ===================== Sprache =====================
    Die Oberfläche folgt der Systemsprache: Deutsch bleibt Deutsch,
    alles andere wird englisch. */
-const WB_EN={"2. Bild": "2nd image","3. Bild": "3rd image","Abstand Bild zu Text": "Gap image to text","Album suchen …": "Search album …","Anschnitt": "Bleed","Auf dem Startbildschirm ablegen": "Add to home screen","Auf neueste Fassung prüfen": "Check for latest version","Aufbau": "Layout","Auflösung": "Resolution","Aus Song": "From song","Ausrichtung": "Orientation","Ausschnitt": "Crop","Ausschnitt zurücksetzen": "Reset crop","Automatisch": "Automatic","Beschreibungstext": "Description text","Beschriftung": "Label","Betriebe in deiner Nähe": "Shops near you","Bewertung": "Rating","Bild": "Image","Bild im Kästchen": "Image in the box","Bild im Laser-SVG": "Image in the laser SVG","Bild wählen": "Choose image","Bilder": "Images","Bildformat": "Image ratio","Bildhöhe": "Image height","Bildwirkung": "Image treatment","Cover im neuen Tab öffnen": "Open cover in a new tab","Datenschutz": "Privacy","Deko": "Trim","Drucken lassen": "Get it printed","Durchnummerieren": "Number the entries","Ebnen": "Flatten","Eigene Schrift laden": "Load your own font","Eigene Vorlage sichern": "Save your own template","Eigenes Mass in mm": "Custom size in mm","Ein Eintrag pro Zeile, Zeit am Ende": "One entry per line, time at the end","Einsetzen": "Apply","Export": "Export","Farbe": "Colour","Farbe des Codes": "Code colour","Farben": "Colours","Farben aus dem Bild": "Colours from the image","Farben zurücksetzen": "Reset colours","Farbstreifen": "Colour strip","Farbstreifen nummerieren": "Number the colour strip","Feinheit": "Detail","Fertige Gestaltungen": "Ready-made designs","Fliesstext, wird automatisch umgebrochen": "Body text, wraps automatically","Form": "Shape","Format": "Size","Fusszeile": "Footer line","Für Displate speichern (JPG)": "Save for Displate (JPG)","Für dunkles Material umkehren": "Invert for dark material","Gestaltung": "Design","Glätten": "Smooth","Grosse Anbieter": "Large providers","Grund": "Background","Grösse": "Size","Haftung": "Liability","Helligkeit": "Brightness","Hilfe": "Help","Hintergrund": "Background","Hinweis-Badge": "Advisory badge","Höhe": "Height","Im Bild ziehen verschiebt, Mausrad zoomt.": "Drag inside the image to move it, scroll to zoom.","Impressum": "Legal notice","Infofeld": "Info field","Infospalte rechtsbündig": "Info column right-aligned","Inhalt": "Content","Innenabstand": "Inner margin","Kontrast": "Contrast","Laden": "Load","Lange Einträge umbrechen statt kürzen": "Wrap long entries instead of trimming","Laser-Ansicht": "Laser view","Linien": "Lines","Liste": "List","Listengrösse": "List size","Muster": "Pattern","Name der Vorlage": "Template name","Nebentext": "Secondary text","PDF speichern": "Save PDF","PNG speichern": "Save PNG","Passepartout": "Mat","Platz": "Placement","Poster-Werkstatt": "Poster Workshop","Postleitzahl": "Postal code","Programm": "Program","Punkte": "Dots","QR-Code": "QR code","QR-Code aufs Poster": "QR code on the poster","Rechtliches": "Legal","Rückgängig (Strg+Z)": "Undo (Ctrl+Z)","SVG für Laser und 3D": "SVG for laser and 3D","SVG für den Druck": "SVG for printing","Schnittmarken": "Crop marks","Schrift": "Typeface","Sichern": "Save","Soundwave &amp; QR-Code": "Soundwave &amp; QR code","Soundwave zeigen": "Show soundwave","Stil": "Style","Striche": "Strokes","Stärke": "Strength","Suchen": "Search","Suchen nach": "Search for","Text": "Text","Text senkrecht": "Text vertically","Textausrichtung": "Text alignment","Titel": "Title","Titelgrösse": "Title size","Untertitel": "Subtitle","Vorlagen &amp; App": "Templates &amp; app","Wiederholen (Strg+Umschalt+Z)": "Redo (Ctrl+Shift+Z)","Würfeln": "Randomise","Zeile über dem Bild": "Line above the image","Zitat oder Spruch": "Quote or saying","[PLZ Ort], Schweiz": "[Postcode Town], Switzerland","[Strasse Nr.]": "[Street No.]","[Vorname Nachname]": "[First name Last name]","E-Mail: [adresse@example.ch]": "E-mail: [address@example.ch]","https://…": "https://…","oder Bild-Adresse": "or image address","optional": "optional","optional, steht unter dem Trennstrich": "optional, sits under the divider","optional, z. B. der Interpret": "optional, e.g. the artist","Direkt im Feld zeichnen, dann wird jede Welle ein Unikat.": "Draw right in the field — that makes every wave one of a kind.","Druckerei: 3 mm plus Marken. Drucker zuhause: beides auf null.": "Print shop: 3 mm plus marks. Home printer: both at zero.","Diese Werkstatt ist für den privaten Gebrauch gedacht.": "This workshop is meant for private use.","Diese Hinweise sind eine Orientierung und keine Rechtsberatung.": "These notes are guidance, not legal advice.","Was frei ist:": "What is free:","Was nicht frei ist:": "What is not free:","Verantwortung:": "Responsibility:","Quellen:": "Sources:","Rechte:": "Rights:","Suche:": "Search:","Liste:": "List:","Zuschnitt:": "Crop:","Laser-SVG:": "Laser SVG:","3D:": "3D:","Über den Drucker": "Via the printer","behält Text als Text, ideal für die Druckerei.": "keeps text as text, ideal for a print shop.","geht als Bild, behält dafür eigene Schriften.": "goes as an image but keeps your own fonts.","rot schneiden, schwarz gravieren, Schrift vorher in Pfade wandeln.": "red cuts, black engraves, convert type to paths first.","SVG in Tinkercad laden und 1–2 mm extrudieren.": "load the SVG into Tinkercad and extrude 1–2 mm.","Albumcover, Bandfotos und fremde Bilder sind urheberrechtlich geschützt. Ein Ausdruck für die eigene Wand ist als Privatkopie gedeckt. Verkaufen, gewerblich nutzen oder öffentlich anbieten ist es nicht. Marken wie das Parental-Advisory-Zeichen dürfen nicht nachgebildet werden; der eingebaute Hinweis-Kasten ist bewusst nur ein neutraler Text.": "Album covers, band photos and other people's images are protected by copyright. A print for your own wall is covered as a private copy. Selling it, using it commercially or offering it publicly is not. Trademarks such as the Parental Advisory logo must not be reproduced; the built-in advisory box is deliberately plain text only.","Auf dem iPhone geht Speichern über das Teilen-Menü — dort „In Dateien sichern“ oder „Bild sichern“ wählen.": "On iPhone, saving goes through the share sheet — pick “Save to Files” or “Save Image”.","Die Anbieter sind Beispiele, keine Empfehlung und keine Werbung — es gibt keine Provision. Preise und Bedingungen ändern sich, bitte selbst vergleichen.": "The providers are examples, not a recommendation and not advertising — there is no commission. Prices and terms change, so compare for yourself.","Die Werkstatt wird unentgeltlich und ohne Gewähr bereitgestellt. Eine Haftung für Schäden aus der Nutzung wird im gesetzlich zulässigen Rahmen wegbedungen; für Vorsatz und grobe Fahrlässigkeit bleibt sie nach Art. 100 OR bestehen.": "The workshop is provided free of charge and without warranty. Liability for damage arising from its use is excluded as far as the law allows; for intent and gross negligence it remains under Art. 100 of the Swiss Code of Obligations.","Gehostet auf GitHub Pages (GitHub Inc., USA) — beim Aufruf werden technisch bedingt IP-Adresse, Zeitpunkt und Browserkennung übertragen.": "Hosted on GitHub Pages (GitHub Inc., USA) — opening the page technically transmits your IP address, the time and your browser identification.","Nur auf deine Aktion hin werden Dienste Dritter angefragt: die Musiksuche sendet den Suchbegriff an Apple, Deezer und MusicBrainz, die Umkreissuche die Postleitzahl an OpenStreetMap, und beim Laden eines Covers wird der Bildserver des Anbieters angesprochen. Auskunft, Berichtigung und Löschung nach Art. 25 ff. DSG über die Adresse im Impressum.": "Third-party services are only contacted when you act: the music search sends your search term to Apple, Deezer and MusicBrainz, the area search sends the postal code to OpenStreetMap, and loading a cover contacts that provider's image server. For access, correction and deletion under Art. 25 ff. of the Swiss Data Protection Act, use the address in the legal notice.","Setzt nur das Aussehen — Bild, Titel und Liste bleiben, wie sie sind.": "Sets the look only — image, title and list stay as they are.","Sichert alles: Bild, Texte, Farben und Einstellungen. Liegt nur auf diesem Gerät.": "Saves everything: image, texts, colours and settings. Stays on this device only.","Sie läuft vollständig auf deinem Gerät. Es werden keine Daten erhoben, gespeichert oder übertragen. Bilder, Texte und Musikangaben verlassen dein Gerät nicht. Nur zwei Funktionen fragen fremde Dienste: die Musiksuche sendet den Suchbegriff an Apple, Deezer und MusicBrainz, die Umkreissuche sendet die Postleitzahl an OpenStreetMap.": "It runs entirely on your device. No data is collected, stored or transmitted. Images, texts and music details never leave your device. Only two features contact outside services: the music search sends your search term to Apple, Deezer and MusicBrainz, and the area search sends the postal code to OpenStreetMap.","Sucht Copyshops, Druckereien, Fotoläden und Rahmenmacher im Umkreis von 20 km über OpenStreetMap. Es wird nur die Postleitzahl übermittelt. Die Daten stammen von Freiwilligen und sind je nach Gegend lückenhaft.": "Finds copy shops, printers, photo shops and framers within 20 km using OpenStreetMap. Only the postal code is transmitted. The data comes from volunteers and is patchy in some areas.","Titellisten, Laufzeiten, Erscheinungsdaten und ähnliche Angaben sind blosse Fakten und nicht geschützt. Eigene Fotos und die hier erzeugten Muster gehören dir — damit darfst du machen, was du willst, auch verkaufen.": "Track lists, running times, release dates and similar details are plain facts and not protected. Your own photos and the patterns generated here belong to you — do whatever you like with them, including selling.","Tracklisten sind Fakten und frei. Fremde Cover privat ja, verkaufen nein. Mit eigenem Bild oder dem Mustergenerator gehört alles dir.": "Track lists are facts and free to use. Other people's covers: private yes, selling no. With your own image or the pattern generator, everything is yours.","Verantwortlich: siehe Impressum. Diese Seite setzt keine Cookies, führt keine Statistik und hat keine Konten. Bilder, Texte und Vorlagen bleiben im Browser; Vorlagen liegen im lokalen Speicher des Geräts und lassen sich dort löschen.": "Controller: see the legal notice. This site sets no cookies, keeps no statistics and has no accounts. Images, texts and templates stay in the browser; templates live in the device's local storage and can be deleted there.","Welche Schrift wirklich erscheint, hängt vom Gerät ab — fehlt eine, nimmt der Browser die nächstbeste. Für ein sicheres Ergebnis eine eigene Schriftdatei laden.": "Which typeface actually shows depends on the device — if one is missing, the browser picks the closest match. For a guaranteed result, load your own font file.","Wer die Werkstatt benutzt, entscheidet selbst, welche Bilder und Texte er einsetzt und was er mit dem Ergebnis macht, und trägt dafür die Verantwortung. Der Ersteller dieser Seite stellt nur das Werkzeug bereit, prüft keine Inhalte und haftet nicht für die Verwendung.": "Whoever uses the workshop decides which images and texts to use and what to do with the result, and carries the responsibility for it. The person providing this site only supplies the tool, checks no content and accepts no liability for its use.","eine Zeile pro Eintrag, Zeit am Ende — „Erster Song 3:50“. Die Gesamtlänge rechnet sich selbst.": "one line per entry, time at the end — “First song 3:50”. The total length is worked out for you.","gesucht wird bei Apple über alle Länder-Stores, danach bei Deezer und MusicBrainz. Spotify geht leider nicht ohne Anmeldeschlüssel.": "searched at Apple across all country stores, then at Deezer and MusicBrainz. Spotify unfortunately needs an access key.","lassen sich auch ins Fenster ziehen oder mit Strg + V einfügen. Nichts davon verlässt dein Gerät.": "can also be dragged into the window or pasted with Ctrl + V. None of it leaves your device.","„Auto“ übernimmt das Seitenverhältnis deines Bildes, „Ganz zeigen“ lässt nichts weg.": "“Auto” takes the aspect ratio of your image, “Show all” leaves nothing out.","„Band“ zeigt alle Alben eines Interpreten, „Album“ sucht direkt danach, „Song“ übernimmt einen einzelnen Titel samt Cover und Link.": "“Band” lists every album by an artist, “Album” searches for one directly, “Song” takes a single track with its cover and link.","„Füllen“ schneidet zu, „Ganz zeigen“ lässt nichts weg, und „Auto“ beim Bildformat passt das Kästchen an dein Bild an.": "“Fill” crops, “Show all” leaves nothing out, and “Auto” under image ratio fits the box to your picture.","Soundwave": "Soundwave","Vorlagen": "Templates","Drucken": "Printing","Recht": "Legal","Klassisch": "Classic","Randlos": "Full bleed","Minimal": "Minimal","Polaroid": "Polaroid","Doppelbild": "Two images","Dreier": "Three images","Porträt": "Portrait","Bild oben, Liste unten. Im Querformat steht das Bild links.": "Image on top, list below. In landscape the image sits left.","Bild füllt die ganze Seite, der Text sitzt auf einer Fläche darüber.": "The image fills the page, the text sits on a panel over it.","Nur Titel, Welle und Infozeile — keine Liste. Alles mittig.": "Title, soundwave and info line only — no list. All centred.","Bild in einem breiten Rahmen, Text mittig darunter. Keine Liste.": "Image in a wide border, text centred below. No list.","Zwei Bilder nebeneinander, darunter der übliche Textblock.": "Two images side by side, the usual text block below.","Drei Bilder nebeneinander — Bild 2 und 3 unter „Bild“ laden.": "Three images side by side — load images 2 and 3 under “Image”.","Grosses Bild, darunter nur Name und Datum. Keine Liste.": "Large image, name and date below. No list.","Ohne": "None","Rahmen": "Frame","Doppelt": "Double","Dick": "Thick","Halbrahmen": "Half frame","Ecken": "Corners","Klammern": "Brackets","Skala": "Scale","Register": "Register","Kopfbalken": "Top bar","Fussbalken": "Bottom bar","Kopflinie": "Top rule","Zwei Linien": "Two rules","Punktreihe": "Dot row","Album": "Album","Band": "Band","Song": "Song","Original": "Original","Schwarzweiss": "Black & white","Duoton": "Duotone","Links": "Left","Mittig": "Centre","Rechts": "Right","Oben": "Top","Unten": "Bottom","Hochformat": "Portrait","Querformat": "Landscape","Füllen": "Fill","Ganz zeigen": "Show all","Gespiegelt": "Mirrored","Balken": "Bars","Linie": "Line","Info-Spalte": "Info column","Ganze Breite": "Full width","Textfarbe": "Text colour","Raster": "Halftone","Nur Umriss": "Outline only","Einfarbig": "Solid","Bild unscharf": "Image blurred","Verlauf": "Gradient","Vignette": "Vignette","Körnung": "Grain","Schwarz auf Weiss": "Black on white","Posterfarben": "Poster colours","Eigene": "Custom","Suche läuft …": "Searching …","Nichts gefunden.": "Nothing found.","Keine Band gefunden.": "No band found.","Kein Song gefunden.": "No song found.","Lade Tracklist …": "Loading track list …","Lade Titel …": "Loading tracks …","Bitte eine Postleitzahl eintragen.": "Please enter a postal code.","Diese Postleitzahl finde ich nicht.": "I can't find that postal code.","Ortssuche nicht erreichbar.": "Location lookup unavailable.","Keine Alben gefunden.": "No albums found.","Bild wird geladen …": "Loading image …","Bild nicht erreichbar.": "Image not reachable.","Datei wird ausgewertet …": "Reading the file …","Gesichert.": "Saved.","Übernommen.": "Applied.","Suche neue Fassung …": "Looking for a new version …","Offline-Betrieb eingerichtet.": "Offline mode ready.","Alle Vorgaben erfüllt.": "All requirements met.","Vor dem Hochladen prüfen:": "Check before uploading:","Abgebrochen.": "Cancelled.","← Zurück zur Suche": "← Back to search","Muster erzeugt — dieses Bild gehört dir.": "Pattern created — this image is yours.","Bildwirkung nicht möglich: Das Bild stammt von einer fremden Adresse. Bitte als Datei laden.": "Image treatment not possible: the picture comes from an outside address. Please load it as a file.","Bildwirkung nicht möglich — Bild bitte als Datei laden.": "Image treatment not possible — please load the picture as a file.","Link zu lang — kürzeren Link verwenden.": "Link too long — use a shorter one.","Kein Platz für den QR-Code. Liste kürzen, Soundwave schmaler stellen oder das Bild kleiner machen.": "No room for the QR code. Shorten the list, narrow the soundwave or make the image smaller.","Bild hinzufügen": "Add image","Zweites Bild": "Second image","Zurück zur Zufallskurve": "Back to the random curve"};
+const WB_EN={"2. Bild": "2nd image","3. Bild": "3rd image","Abstand Bild zu Text": "Gap image to text","Album suchen …": "Search album …","Anschnitt": "Bleed","Auf dem Startbildschirm ablegen": "Add to home screen","Auf neueste Fassung prüfen": "Check for latest version","Aufbau": "Layout","Auflösung": "Resolution","Aus Song": "From song","Ausrichtung": "Orientation","Ausschnitt": "Crop","Ausschnitt zurücksetzen": "Reset crop","Automatisch": "Automatic","Beschreibungstext": "Description text","Beschriftung": "Label","Betriebe in deiner Nähe": "Shops near you","Bewertung": "Rating","Bild": "Image","Bild im Kästchen": "Image in the box","Bild im Laser-SVG": "Image in the laser SVG","Bild wählen": "Choose image","Bilder": "Images","Bildformat": "Image ratio","Bildhöhe": "Image height","Bildwirkung": "Image treatment","Cover im neuen Tab öffnen": "Open cover in a new tab","Datenschutz": "Privacy","Deko": "Trim","Drucken lassen": "Get it printed","Durchnummerieren": "Number the entries","Ebnen": "Flatten","Eigene Schrift laden": "Load your own font","Eigene Vorlage sichern": "Save your own template","Eigenes Mass in mm": "Custom size in mm","Ein Eintrag pro Zeile, Zeit am Ende": "One entry per line, time at the end","Einsetzen": "Apply","Export": "Export","Farbe": "Colour","Farbe des Codes": "Code colour","Farben": "Colours","Farben aus dem Bild": "Colours from the image","Farben zurücksetzen": "Reset colours","Farbstreifen": "Colour strip","Farbstreifen nummerieren": "Number the colour strip","Feinheit": "Detail","Fertige Gestaltungen": "Ready-made designs","Fliesstext, wird automatisch umgebrochen": "Body text, wraps automatically","Form": "Shape","Format": "Size","Fusszeile": "Footer line","Für Displate speichern (JPG)": "Save for Displate (JPG)","Für dunkles Material umkehren": "Invert for dark material","Gestaltung": "Design","Glätten": "Smooth","Grosse Anbieter": "Large providers","Grund": "Background","Grösse": "Size","Haftung": "Liability","Helligkeit": "Brightness","Hilfe": "Help","Hintergrund": "Background","Hinweis-Badge": "Advisory badge","Höhe": "Height","Im Bild ziehen verschiebt, Mausrad zoomt.": "Drag inside the image to move it, scroll to zoom.","Impressum": "Legal notice","Infofeld": "Info field","Infospalte rechtsbündig": "Info column right-aligned","Inhalt": "Content","Innenabstand": "Inner margin","Kontrast": "Contrast","Laden": "Load","Lange Einträge umbrechen statt kürzen": "Wrap long entries instead of trimming","Laser-Ansicht": "Laser view","Linien": "Lines","Liste": "List","Listengrösse": "List size","Muster": "Pattern","Name der Vorlage": "Template name","Nebentext": "Secondary text","PDF speichern": "Save PDF","PNG speichern": "Save PNG","Passepartout": "Mat","Platz": "Placement","Poster-Werkstatt": "Poster Workshop","Postleitzahl": "Postal code","Programm": "Program","Punkte": "Dots","QR-Code": "QR code","QR-Code aufs Poster": "QR code on the poster","Rechtliches": "Legal","Rückgängig (Strg+Z)": "Undo (Ctrl+Z)","SVG für Laser und 3D": "SVG for laser and 3D","SVG für den Druck": "SVG for printing","Schnittmarken": "Crop marks","Schrift": "Typeface","Sichern": "Save","Soundwave &amp; QR-Code": "Soundwave &amp; QR code","Soundwave zeigen": "Show soundwave","Stil": "Style","Striche": "Strokes","Stärke": "Strength","Suchen": "Search","Suchen nach": "Search for","Text": "Text","Text senkrecht": "Text vertically","Textausrichtung": "Text alignment","Titel": "Title","Titelgrösse": "Title size","Untertitel": "Subtitle","Vorlagen &amp; App": "Templates &amp; app","Wiederholen (Strg+Umschalt+Z)": "Redo (Ctrl+Shift+Z)","Würfeln": "Randomise","Zeile über dem Bild": "Line above the image","Zitat oder Spruch": "Quote or saying","[PLZ Ort], Schweiz": "[Postcode Town], Switzerland","[Strasse Nr.]": "[Street No.]","[Vorname Nachname]": "[First name Last name]","E-Mail: [adresse@example.ch]": "E-mail: [address@example.ch]","https://…": "https://…","oder Bild-Adresse": "or image address","optional": "optional","optional, steht unter dem Trennstrich": "optional, sits under the divider","optional, z. B. der Interpret": "optional, e.g. the artist","Direkt im Feld zeichnen, dann wird jede Welle ein Unikat.": "Draw right in the field — that makes every wave one of a kind.","Druckerei: 3 mm plus Marken. Drucker zuhause: beides auf null.": "Print shop: 3 mm plus marks. Home printer: both at zero.","Diese Werkstatt ist für den privaten Gebrauch gedacht.": "This workshop is meant for private use.","Diese Hinweise sind eine Orientierung und keine Rechtsberatung.": "These notes are guidance, not legal advice.","Was frei ist:": "What is free:","Was nicht frei ist:": "What is not free:","Verantwortung:": "Responsibility:","Quellen:": "Sources:","Rechte:": "Rights:","Suche:": "Search:","Liste:": "List:","Zuschnitt:": "Crop:","Laser-SVG:": "Laser SVG:","3D:": "3D:","Über den Drucker": "Via the printer","behält Text als Text, ideal für die Druckerei.": "keeps text as text, ideal for a print shop.","geht als Bild, behält dafür eigene Schriften.": "goes as an image but keeps your own fonts.","rot schneiden, schwarz gravieren, Schrift vorher in Pfade wandeln.": "red cuts, black engraves, convert type to paths first.","SVG in Tinkercad laden und 1–2 mm extrudieren.": "load the SVG into Tinkercad and extrude 1–2 mm.","Albumcover, Bandfotos und fremde Bilder sind urheberrechtlich geschützt. Ein Ausdruck für die eigene Wand ist als Privatkopie gedeckt. Verkaufen, gewerblich nutzen oder öffentlich anbieten ist es nicht. Marken wie das Parental-Advisory-Zeichen dürfen nicht nachgebildet werden; der eingebaute Hinweis-Kasten ist bewusst nur ein neutraler Text.": "Album covers, band photos and other people's images are protected by copyright. A print for your own wall is covered as a private copy. Selling it, using it commercially or offering it publicly is not. Trademarks such as the Parental Advisory logo must not be reproduced; the built-in advisory box is deliberately plain text only.","Auf dem iPhone geht Speichern über das Teilen-Menü — dort „In Dateien sichern“ oder „Bild sichern“ wählen.": "On iPhone, saving goes through the share sheet — pick “Save to Files” or “Save Image”.","Die Anbieter sind Beispiele, keine Empfehlung und keine Werbung — es gibt keine Provision. Preise und Bedingungen ändern sich, bitte selbst vergleichen.": "The providers are examples, not a recommendation and not advertising — there is no commission. Prices and terms change, so compare for yourself.","Die Werkstatt wird unentgeltlich und ohne Gewähr bereitgestellt. Eine Haftung für Schäden aus der Nutzung wird im gesetzlich zulässigen Rahmen wegbedungen; für Vorsatz und grobe Fahrlässigkeit bleibt sie nach Art. 100 OR bestehen.": "The workshop is provided free of charge and without warranty. Liability for damage arising from its use is excluded as far as the law allows; for intent and gross negligence it remains under Art. 100 of the Swiss Code of Obligations.","Gehostet auf GitHub Pages (GitHub Inc., USA) — beim Aufruf werden technisch bedingt IP-Adresse, Zeitpunkt und Browserkennung übertragen.": "Hosted on GitHub Pages (GitHub Inc., USA) — opening the page technically transmits your IP address, the time and your browser identification.","Nur auf deine Aktion hin werden Dienste Dritter angefragt: die Musiksuche sendet den Suchbegriff an Apple, Deezer und MusicBrainz, die Umkreissuche die Postleitzahl an OpenStreetMap, und beim Laden eines Covers wird der Bildserver des Anbieters angesprochen. Auskunft, Berichtigung und Löschung nach Art. 25 ff. DSG über die Adresse im Impressum.": "Third-party services are only contacted when you act: the music search sends your search term to Apple, Deezer and MusicBrainz, the area search sends the postal code to OpenStreetMap, and loading a cover contacts that provider's image server. For access, correction and deletion under Art. 25 ff. of the Swiss Data Protection Act, use the address in the legal notice.","Setzt nur das Aussehen — Bild, Titel und Liste bleiben, wie sie sind.": "Sets the look only — image, title and list stay as they are.","Sichert alles: Bild, Texte, Farben und Einstellungen. Liegt nur auf diesem Gerät.": "Saves everything: image, texts, colours and settings. Stays on this device only.","Sie läuft vollständig auf deinem Gerät. Es werden keine Daten erhoben, gespeichert oder übertragen. Bilder, Texte und Musikangaben verlassen dein Gerät nicht. Nur zwei Funktionen fragen fremde Dienste: die Musiksuche sendet den Suchbegriff an Apple, Deezer und MusicBrainz, die Umkreissuche sendet die Postleitzahl an OpenStreetMap.": "It runs entirely on your device. No data is collected, stored or transmitted. Images, texts and music details never leave your device. Only two features contact outside services: the music search sends your search term to Apple, Deezer and MusicBrainz, and the area search sends the postal code to OpenStreetMap.","Sucht Copyshops, Druckereien, Fotoläden und Rahmenmacher im Umkreis von 20 km über OpenStreetMap. Es wird nur die Postleitzahl übermittelt. Die Daten stammen von Freiwilligen und sind je nach Gegend lückenhaft.": "Finds copy shops, printers, photo shops and framers within 20 km using OpenStreetMap. Only the postal code is transmitted. The data comes from volunteers and is patchy in some areas.","Titellisten, Laufzeiten, Erscheinungsdaten und ähnliche Angaben sind blosse Fakten und nicht geschützt. Eigene Fotos und die hier erzeugten Muster gehören dir — damit darfst du machen, was du willst, auch verkaufen.": "Track lists, running times, release dates and similar details are plain facts and not protected. Your own photos and the patterns generated here belong to you — do whatever you like with them, including selling.","Tracklisten sind Fakten und frei. Fremde Cover privat ja, verkaufen nein. Mit eigenem Bild oder dem Mustergenerator gehört alles dir.": "Track lists are facts and free to use. Other people's covers: private yes, selling no. With your own image or the pattern generator, everything is yours.","Verantwortlich: siehe Impressum. Diese Seite setzt keine Cookies, führt keine Statistik und hat keine Konten. Bilder, Texte und Vorlagen bleiben im Browser; Vorlagen liegen im lokalen Speicher des Geräts und lassen sich dort löschen.": "Controller: see the legal notice. This site sets no cookies, keeps no statistics and has no accounts. Images, texts and templates stay in the browser; templates live in the device's local storage and can be deleted there.","Welche Schrift wirklich erscheint, hängt vom Gerät ab — fehlt eine, nimmt der Browser die nächstbeste. Für ein sicheres Ergebnis eine eigene Schriftdatei laden.": "Which typeface actually shows depends on the device — if one is missing, the browser picks the closest match. For a guaranteed result, load your own font file.","Wer die Werkstatt benutzt, entscheidet selbst, welche Bilder und Texte er einsetzt und was er mit dem Ergebnis macht, und trägt dafür die Verantwortung. Der Ersteller dieser Seite stellt nur das Werkzeug bereit, prüft keine Inhalte und haftet nicht für die Verwendung.": "Whoever uses the workshop decides which images and texts to use and what to do with the result, and carries the responsibility for it. The person providing this site only supplies the tool, checks no content and accepts no liability for its use.","eine Zeile pro Eintrag, Zeit am Ende — „Erster Song 3:50“. Die Gesamtlänge rechnet sich selbst.": "one line per entry, time at the end — “First song 3:50”. The total length is worked out for you.","gesucht wird bei Apple über alle Länder-Stores, danach bei Deezer und MusicBrainz. Spotify geht leider nicht ohne Anmeldeschlüssel.": "searched at Apple across all country stores, then at Deezer and MusicBrainz. Spotify unfortunately needs an access key.","lassen sich auch ins Fenster ziehen oder mit Strg + V einfügen. Nichts davon verlässt dein Gerät.": "can also be dragged into the window or pasted with Ctrl + V. None of it leaves your device.","„Auto“ übernimmt das Seitenverhältnis deines Bildes, „Ganz zeigen“ lässt nichts weg.": "“Auto” takes the aspect ratio of your image, “Show all” leaves nothing out.","„Band“ zeigt alle Alben eines Interpreten, „Album“ sucht direkt danach, „Song“ übernimmt einen einzelnen Titel samt Cover und Link.": "“Band” lists every album by an artist, “Album” searches for one directly, “Song” takes a single track with its cover and link.","„Füllen“ schneidet zu, „Ganz zeigen“ lässt nichts weg, und „Auto“ beim Bildformat passt das Kästchen an dein Bild an.": "“Fill” crops, “Show all” leaves nothing out, and “Auto” under image ratio fits the box to your picture.","Soundwave": "Soundwave","Vorlagen": "Templates","Drucken": "Printing","Recht": "Legal","Klassisch": "Classic","Randlos": "Full bleed","Minimal": "Minimal","Polaroid": "Polaroid","Doppelbild": "Two images","Dreier": "Three images","Porträt": "Portrait","Bild oben, Liste unten. Im Querformat steht das Bild links.": "Image on top, list below. In landscape the image sits left.","Bild füllt die ganze Seite, der Text sitzt auf einer Fläche darüber.": "The image fills the page, the text sits on a panel over it.","Nur Titel, Welle und Infozeile — keine Liste. Alles mittig.": "Title, soundwave and info line only — no list. All centred.","Bild in einem breiten Rahmen, Text mittig darunter. Keine Liste.": "Image in a wide border, text centred below. No list.","Zwei Bilder nebeneinander, darunter der übliche Textblock.": "Two images side by side, the usual text block below.","Drei Bilder nebeneinander — Bild 2 und 3 unter „Bild“ laden.": "Three images side by side — load images 2 and 3 under “Image”.","Grosses Bild, darunter nur Name und Datum. Keine Liste.": "Large image, name and date below. No list.","Ohne": "None","Rahmen": "Frame","Doppelt": "Double","Dick": "Thick","Halbrahmen": "Half frame","Ecken": "Corners","Klammern": "Brackets","Skala": "Scale","Register": "Register","Kopfbalken": "Top bar","Fussbalken": "Bottom bar","Kopflinie": "Top rule","Zwei Linien": "Two rules","Punktreihe": "Dot row","Album": "Album","Band": "Band","Song": "Song","Original": "Original","Schwarzweiss": "Black & white","Duoton": "Duotone","Links": "Left","Mittig": "Centre","Rechts": "Right","Oben": "Top","Unten": "Bottom","Hochformat": "Portrait","Querformat": "Landscape","Füllen": "Fill","Ganz zeigen": "Show all","Gespiegelt": "Mirrored","Balken": "Bars","Linie": "Line","Info-Spalte": "Info column","Ganze Breite": "Full width","Textfarbe": "Text colour","Raster": "Halftone","Nur Umriss": "Outline only","Einfarbig": "Solid","Bild unscharf": "Image blurred","Verlauf": "Gradient","Vignette": "Vignette","Körnung": "Grain","Schwarz auf Weiss": "Black on white","Posterfarben": "Poster colours","Eigene": "Custom","Suche läuft …": "Searching …","Nichts gefunden.": "Nothing found.","Keine Band gefunden.": "No band found.","Kein Song gefunden.": "No song found.","Lade Tracklist …": "Loading track list …","Lade Titel …": "Loading tracks …","Bitte eine Postleitzahl eintragen.": "Please enter a postal code.","Diese Postleitzahl finde ich nicht.": "I can't find that postal code.","Ortssuche nicht erreichbar.": "Location lookup unavailable.","Keine Alben gefunden.": "No albums found.","Bild wird geladen …": "Loading image …","Bild nicht erreichbar.": "Image not reachable.","Datei wird ausgewertet …": "Reading the file …","Gesichert.": "Saved.","Übernommen.": "Applied.","Suche neue Fassung …": "Looking for a new version …","Offline-Betrieb eingerichtet.": "Offline mode ready.","Alle Vorgaben erfüllt.": "All requirements met.","Vor dem Hochladen prüfen:": "Check before uploading:","Abgebrochen.": "Cancelled.","← Zurück zur Suche": "← Back to search","Muster erzeugt — dieses Bild gehört dir.": "Pattern created — this image is yours.","Bildwirkung nicht möglich: Das Bild stammt von einer fremden Adresse. Bitte als Datei laden.": "Image treatment not possible: the picture comes from an outside address. Please load it as a file.","Bildwirkung nicht möglich — Bild bitte als Datei laden.": "Image treatment not possible — please load the picture as a file.","Link zu lang — kürzeren Link verwenden.": "Link too long — use a shorter one.","Kein Platz für den QR-Code. Liste kürzen, Soundwave schmaler stellen oder das Bild kleiner machen.": "No room for the QR code. Shorten the list, narrow the soundwave or make the image smaller.","Bild hinzufügen": "Add image","Zweites Bild": "Second image","Zurück zur Zufallskurve": "Back to the random curve","Allgemein": "General","Musik": "Music","Menschen": "People","Dinge": "Things","Ereignisse": "Events","Leeres Blatt": "Blank sheet","Einfaches Foto": "Simple photo","Erinnerung": "Remembrance","Jahresrückblick": "Year in review","Playlist / Album": "Playlist / album","Album mit Bildhintergrund": "Album with image background","Konzert": "Concert","Hochzeit": "Wedding","Paar": "Couple","Familie": "Family","Geburt": "Birth","Geburtstag": "Birthday","Freunde": "Friends","Abschluss": "Graduation","Haustier": "Pet","Auto": "Car","Motorrad": "Motorbike","Neues Zuhause": "New home","Rezept": "Recipe","Reise": "Trip","Berge & Wandern": "Mountains & hiking","Sport & Wettkampf": "Sport & competition","Spiel": "Game","Film & Serie": "Film & series","Galerie": "Gallery","Nachtlicht": "Night light","Kino": "Cinema","Vinyl": "Vinyl","Sanft": "Soft","Kraftpapier": "Kraft paper","Blaupause": "Blueprint","Weiss, klare Serifenlose, nichts drumherum": "White, clean sans, nothing around it","Warmes Papier mit breitem Passepartout und Rahmen": "Warm paper with a wide mat and frame","Cover unscharf im Hintergrund, Infos rechts": "Cover blurred behind, info right-aligned","Gold auf Schwarz mit Doppelrahmen": "Gold on black with a double frame","Bild randlos, Text auf dunkler Fläche darüber": "Full-bleed image, text on a dark panel over it","Schreibmaschine, breite Soundwave, zwei Linien": "Typewriter, wide soundwave, two rules","Bild im breiten Rahmen, Text mittig darunter": "Image in a wide border, text centred below","Nur Titel und Soundwave, viel Luft": "Title and soundwave only, plenty of air","Braunton mit Körnung und Eckwinkeln": "Brown tone with grain and corner marks","Kühles Blaugrau mit Skalenstrichen": "Cool blue-grey with scale marks","Rosé, Serifen, mittig, Porträtaufbau": "Rosé, serif, centred, portrait layout","Zwei Bilder nebeneinander auf Sand": "Two images side by side on sand","Selbst drucken": "Print it yourself","Fotolabor / Posterdruck": "Photo lab / poster print","Druckerei mit Anschnitt": "Print shop with bleed","Copyshop um die Ecke": "Local copy shop","Metalldruck": "Metal print","Lasergravur / 3D-Druck": "Laser engraving / 3D print","Mitgeben:": "Send them:","Eigener Drucker, A4 oder A3. Randlos geht bei den wenigsten Geräten — plane einen weissen Rand ein.": "Your own printer, A4 or A3. Few machines print edge to edge — plan for a white margin.","PNG mit 300 dpi oder direkt „Über den Drucker“.": "PNG at 300 dpi, or use “Via the printer”.","Der übliche Weg für Poster an die Wand. Schneiden die Datei selbst zu, deshalb kein Anschnitt nötig. Meist auch Rahmen, Alu-Dibond oder Acryl im Angebot.": "The usual route for a poster on the wall. They trim the file themselves, so no bleed is needed. Most also offer frames, aluminium or acrylic.","PNG oder JPG mit 300 dpi in der Endgrösse, kein Anschnitt, keine Schnittmarken.": "PNG or JPG at 300 dpi in the final size, no bleed, no crop marks.","Klassische Online-Druckerei für Auflagen. Will Beschnittzugabe und Schnittmarken, dafür wird es ab etwa zehn Stück deutlich günstiger.": "A classic online print shop for runs. Wants bleed and crop marks, and gets much cheaper from about ten copies.","PDF mit 3 mm Anschnitt und Schnittmarken.": "PDF with 3 mm bleed and crop marks.","Schnell, keine Versandkosten, gut für einen Probedruck bevor du das teure Papier bestellst.": "Fast, no shipping, good for a test print before you order the expensive paper.","PDF, kein Anschnitt. Papier ab 200 g wirkt deutlich wertiger als 120 g.": "PDF, no bleed. Paper from 200 gsm feels far better than 120 gsm.","Poster auf Metallplatte, magnetische Wandhalterung. Feste Vorgaben, dafür ein sehr eigener Look.": "Poster on a metal sheet with a magnetic wall mount. Fixed requirements, but a look of its own.","JPG über den Displate-Knopf. Keine Rahmen-Deko, kein Anschnitt.": "JPG via the Displate button. No frame trim, no bleed.","Holz, Acryl oder Schiefer statt Papier. Rechnet das Bild in ein Punktraster um.": "Wood, acrylic or slate instead of paper. Converts the picture into a dot raster.","SVG über „Für Laser und 3D“. Rote Linien schneiden, schwarze gravieren.": "SVG via “For laser and 3D”. Red lines cut, black ones engrave.","Zum Beispiel Onlineprinters, Flyeralarm, Vistaprint, Wir-machen-Druck.": "","Örtliche Werkstätten, Makerspaces oder Anbieter für Gravur auf Bestellung.": "Local workshops, makerspaces or engraving services.","Einstellungen übernehmen": "Apply these settings","DIN": "DIN","Rahmenmasse": "Frame sizes","Quadratisch": "Square","Klein · Laser & Platten": "Small · laser & plates","Fotoposter, Alu-Dibond, Leinwand. Schweizer Anbieter, schnelle Lieferung.": "Photo posters, aluminium, canvas. Swiss provider, quick delivery.","Fotoposter und Wandbilder, breite Formatauswahl.": "Photo posters and wall art, wide choice of sizes.","Poster, Rahmen und Wandbilder, viele Materialien.": "Posters, frames and wall art, many materials.","Fotolabor-Qualität, auch FineArt-Papiere. Guter Allrounder.": "Photo-lab quality, fine-art papers too. A good all-rounder.","Galerie-Niveau, Fine-Art und Rahmen. Teurer, dafür die beste Anmutung.": "Gallery level, fine art and frames. Pricier, but the best feel.","Poster und Wandbilder, häufig Aktionen.": "Posters and wall art, frequent offers.","Sehr verbreitet, Abholung auch in vielen Läden möglich.": "Very common, pick-up in many shops.","Poster in vielen Grössen, auch gerahmt.": "Posters in many sizes, framed too.","Druckerei für Auflagen. Braucht Anschnitt und Schnittmarken.": "Print shop for runs. Needs bleed and crop marks.","Druckerei für Auflagen, ab etwa zehn Stück günstig.": "Print shop for runs, cheap from about ten copies.","Druckerei für Auflagen und Plakate bis DIN A0.": "Print shop for runs and posters up to A0.","Poster auf Metallplatte mit Magnethalterung. Feste Vorgaben.": "Poster on a metal sheet with magnetic mount. Fixed requirements.","Betrieb": "Business","Copyshop": "Copy shop","Druckerei": "Print shop","Fotoladen": "Photo shop","Rahmen & Einrahmung": "Frames & framing","Schreibwaren": "Stationery","Gravur": "Engraving","Interpret": "Artist","Interpret · Deezer": "Artist · Deezer","{n} Titel übernommen ({q}).": "{n} tracks taken from {q}.","{n} Titel aus „{a}“ übernommen ({q}).": "{n} tracks from “{a}” taken from {q}.","Song übernommen.": "Track taken.","Song übernommen, Album nicht erreichbar.": "Track taken, album not reachable.","Keine Datenbank kennt die Titel dieses Albums — bitte von Hand eintippen.": "No database knows this album's tracks — please type them in by hand.","{n} Treffer": "{n} results","{n} Alben": "{n} albums","{n} Alben (Deezer)": "{n} albums (Deezer)","Lade Alben von {a} …": "Loading albums by {a} …","{n} Betriebe um {o}": "{n} businesses near {o}","Bei Apple nichts, dafür bei Deezer.": "Nothing at Apple, but Deezer has it.","In 20 km ist bei OpenStreetMap nichts eingetragen. Die Online-Anbieter unten helfen weiter.": "Nothing listed on OpenStreetMap within 20 km. The online providers below can help.","Die Umkreissuche ist gerade nicht erreichbar. Später nochmal versuchen.": "The area search is unavailable right now. Try again later.","Suche Betriebe um {o} …": "Looking for businesses near {o} …","QR-Code bereit, Kontrast {k}:1.": "QR code ready, contrast {k}:1.","Heller Code auf dunklem Grund, Kontrast {k}:1 — moderne Handys lesen das problemlos.": "Light code on a dark ground, contrast {k}:1 — modern phones read it fine.","Zu wenig Kontrast ({k}:1) — der Code wird zur Sicherheit schwarz auf weiss gedruckt.": "Not enough contrast ({k}:1) — the code will be printed black on white to be safe.","{n} Einträge": "{n} entries","{n} Einträge · {m} min gesamt": "{n} entries · {m} min total","{n} × {m} Pixel": "{n} × {m} pixels","Bogen inklusive Rand: {w} × {h} mm": "Sheet including margin: {w} × {h} mm","Du benutzt Fassung {v}.": "You are using version {v}.","{f} gespeichert": "{f} saved","{f} geteilt": "{f} shared","Kurve aus „{f}“ übernommen ({s} s). Du kannst sie jetzt von Hand nachziehen.": "Curve taken from “{f}” ({s} s). You can redraw it by hand now.","Datei nicht lesbar. MP3, WAV, M4A oder FLAC versuchen.": "File not readable. Try MP3, WAV, M4A or FLAC.","Schrift geladen und eingesetzt.": "Font loaded and applied.","Schrift nicht lesbar. TTF, OTF oder WOFF versuchen.": "Font not readable. Try TTF, OTF or WOFF.","Kein Platz mehr — Bild zu gross oder Speicher voll.": "No space left — image too large or storage full.","In neuem Tab geöffnet — dort lange tippen und sichern.": "Opened in a new tab — long-press there to save.","Der Browser hat das Speichern blockiert. Bitte Pop-ups erlauben.": "The browser blocked the download. Please allow pop-ups.","Angezeigt, aber der Export ist gesperrt. Bild im neuen Tab öffnen, sichern und als Datei wählen — oder mit Strg + V einfügen.": "Shown, but export is blocked. Open the image in a new tab, save it and choose it as a file — or paste with Ctrl + V.","Suche nicht möglich ({e}). Liste einfach von Hand eintippen.": "Search not possible ({e}). Just type the list in by hand.","Tracklist nicht ladbar ({e}).": "Track list could not be loaded ({e}).","Alben nicht ladbar ({e}).": "Albums could not be loaded ({e}).","Deezer nicht erreichbar.": "Deezer not reachable.","Dieses Gerät schafft nur {d} dpi bei dieser Grösse — es wird mit {d} dpi gespeichert.": "This device manages only {d} dpi at this size — it will be saved at {d} dpi.","Das Bild ist zu gross für diesen Browser. Kleinere Auflösung wählen.": "The image is too large for this browser. Pick a lower resolution.","Export gesperrt: Das Bild stammt von einer fremden Adresse. Bitte als Datei laden.": "Export blocked: the image comes from an outside address. Please load it as a file.","Im Druckdialog 'Als PDF sichern' wählen.": "Choose “Save as PDF” in the print dialog.","Der Browser hat das Druckfenster blockiert. Nimm „PDF speichern“.": "The browser blocked the print window. Use “Save PDF”.","Druck gesperrt: Bild von fremder Adresse. Bitte als Datei laden.": "Printing blocked: image from an outside address. Please load it as a file.","Export blockiert — Bild bitte als Datei laden.": "Export blocked — please load the image as a file.","QR-Code bereit ({n} × {n} Felder)": "QR code ready ({n} × {n} modules)","Seitenverhältnis ist {v}:1 statt 1,4:1 — Format „Displate“ wählen.": "Aspect ratio is {v}:1 instead of 1.4:1 — choose the “Displate” size.","Kurze Seite ergibt nur {p} px, nötig sind 2900.": "The short side gives only {p} px, 2900 are required.","Innenabstand ist {a} px, Displate will mindestens {b} px Abstand zum Rand.": "Inner margin is {a} px, Displate wants at least {b} px from the edge.","Displate lehnt Rahmen in der Gestaltung ab — Deko auf „Ohne“ stellen.": "Displate rejects frames in the artwork — set trim to “None”.","Anschnitt und Schnittmarken gehören nicht auf eine Displate-Datei.": "Bleed and crop marks do not belong on a Displate file.","Nur für den privaten Gebrauch": "For private use only","Verstanden": "Understood","Alles läuft auf deinem Gerät, es werden keine Daten übertragen.": "Everything runs on your device, no data is transmitted.","Eigene Fotos und die erzeugten Muster gehören dir. Fremde Albumcover und Bandfotos sind geschützt: für die eigene Wand in Ordnung, verkaufen nicht. Was du hochlädst und was du mit dem Ergebnis machst, liegt in deiner Verantwortung.": "Your own photos and the generated patterns belong to you. Other people's album covers and band photos are protected: fine for your own wall, not for selling. What you upload and what you do with the result is your responsibility."};
 const LANG=(navigator.language||"de").toLowerCase().indexOf("de")===0?"de":"en";
 function T(t){
   if(LANG==="de"||t===undefined||t===null)return t;
   const k=String(t).replace(/\s+/g," ").trim();
   return (WB_EN[k]!==undefined)?WB_EN[k]:t;}
+function Tf(t,w){
+  let o=T(t);
+  Object.keys(w||{}).forEach(k=>{o=o.split("{"+k+"}").join(w[k]);});
+  return o;}
 function uebersetzeDOM(){
   if(LANG==="de")return;
   const gehe=(knoten)=>{
@@ -1389,22 +1393,24 @@ function render(){
   $("dims").textContent=cfg.W+" × "+cfg.H+" mm";
   $("layoutHint").textContent=T((LAYOUTS[state.layout]||{}).hint||"");
   pushHist();
-  $("pxInfo").textContent=Math.round(sh.w/25.4*state.dpi)+" × "+Math.round(sh.h/25.4*state.dpi)+" Pixel";
-  $("sheetInfo").textContent=sh.m?("Bogen inklusive Rand: "+sh.w.toFixed(0)+" × "+sh.h.toFixed(0)+" mm"):"";
+  $("pxInfo").textContent=Tf("{n} × {m} Pixel",
+    {n:Math.round(sh.w/25.4*state.dpi),m:Math.round(sh.h/25.4*state.dpi)});
+  $("sheetInfo").textContent=sh.m?Tf("Bogen inklusive Rand: {w} × {h} mm",
+    {w:sh.w.toFixed(0),h:sh.h.toFixed(0)}):"";
   const mins=totalMinutes(cfg.tracks);
-  $("trackInfo").textContent=cfg.tracks.length+" Einträge"+(mins?" · "+mins+" min gesamt":"");
+  $("trackInfo").textContent=mins?Tf("{n} Einträge · {m} min gesamt",{n:cfg.tracks.length,m:mins})
+    :Tf("{n} Einträge",{n:cfg.tracks.length});
   if(state.showQR&&state.qr){
     const m=qrFor(state.qr), f=cfg.qrFarben;
-    if(!m){$("qrMsg").className="msg bad";$("qrMsg").textContent="Link zu lang — kürzeren Link verwenden.";}
+    if(!m){$("qrMsg").className="msg bad";$("qrMsg").textContent=T("Link zu lang — kürzeren Link verwenden.");}
     else if(f.notfall){$("qrMsg").className="msg warn";
-      $("qrMsg").textContent="Zu wenig Kontrast ("+f.k.toFixed(1)+":1) — der Code wird zur Sicherheit schwarz auf weiss gedruckt.";}
+      $("qrMsg").textContent=Tf("Zu wenig Kontrast ({k}:1) — der Code wird zur Sicherheit schwarz auf weiss gedruckt.",{k:f.k.toFixed(1)});}
     else if(f.invertiert){$("qrMsg").className="msg ok";
-      $("qrMsg").textContent="Heller Code auf dunklem Grund, Kontrast "+f.k.toFixed(1)+
-        ":1 — moderne Handys lesen das problemlos.";}
+      $("qrMsg").textContent=Tf("Heller Code auf dunklem Grund, Kontrast {k}:1 — moderne Handys lesen das problemlos.",{k:f.k.toFixed(1)});}
     else if(!qrGezeichnet){$("qrMsg").className="msg warn";
-      $("qrMsg").textContent="Kein Platz für den QR-Code. Liste kürzen, Soundwave schmaler stellen oder das Bild kleiner machen.";}
+      $("qrMsg").textContent=T("Kein Platz für den QR-Code. Liste kürzen, Soundwave schmaler stellen oder das Bild kleiner machen.");}
     else{$("qrMsg").className="msg ok";
-      $("qrMsg").textContent="QR-Code bereit, Kontrast "+f.k.toFixed(1)+":1.";}}
+      $("qrMsg").textContent=Tf("QR-Code bereit, Kontrast {k}:1.",{k:f.k.toFixed(1)});}}
   else $("qrMsg").textContent="";
 }
 
@@ -1464,7 +1470,7 @@ allChips();
 
 const fsel=$("format");
 FORMAT_GROUPS.forEach(([g,items])=>{
-  const og=document.createElement("optgroup"); og.label=g;
+  const og=document.createElement("optgroup"); og.label=T(g);
   items.forEach(([k,n,w,h])=>{const o=document.createElement("option");o.value=k;
     o.textContent=n+"  ·  "+w+"×"+h+" mm";og.appendChild(o);});
   fsel.appendChild(og);});
@@ -1793,10 +1799,11 @@ async function loadAudio(f){
     state.waveName=f.name; state.showWave=true; $("showWave").checked=true;
     ac.close();
     $("audioMsg").className="msg ok";
-    $("audioMsg").textContent="Kurve aus „"+f.name+"“ übernommen ("+Math.round(audio.duration)+" s). Du kannst sie jetzt von Hand nachziehen.";
+    $("audioMsg").textContent=Tf("Kurve aus „{f}“ übernommen ({s} s). Du kannst sie jetzt von Hand nachziehen.",
+      {f:f.name,s:Math.round(audio.duration)});
     drawWaveEditor(); render();
   }catch(err){$("audioMsg").className="msg bad";
-    $("audioMsg").textContent="Datei nicht lesbar. MP3, WAV, M4A oder FLAC versuchen.";}}
+    $("audioMsg").textContent=T("Datei nicht lesbar. MP3, WAV, M4A oder FLAC versuchen.");}}
 
 /* iTunes-Suche per JSONP */
 function jsonp(url){
@@ -1840,11 +1847,11 @@ async function search(){
         const arts=(dz&&dz.data)||[];
         if(!arts.length)return sMsg("Keine Band gefunden.","bad");
         sMsg("Bei Apple nichts, dafür bei Deezer.","warn");
-        arts.forEach(a=>addRow(a.picture_medium||"",a.name,"Interpret · Deezer",
+        arts.forEach(a=>addRow(a.picture_medium||"",a.name,T("Interpret · Deezer"),
           ()=>showDeezerAlbums(a)));
         return;}
-      sMsg(list.length+" Treffer");
-      list.forEach(a=>addRow("",a.artistName,a.primaryGenreName||"Interpret",()=>showAlbumsOf(a)));
+      sMsg(Tf("{n} Treffer",{n:list.length}));
+      list.forEach(a=>addRow("",a.artistName,a.primaryGenreName||T("Interpret"),()=>showAlbumsOf(a)));
       return;}
     if(mode==="song"){
       const d=await jsonp(ITUNES+"/search?term="+encodeURIComponent(q)+"&entity=song&media=music&limit=14&country="+c);
@@ -1866,7 +1873,7 @@ async function search(){
       return;}
     sMsg("");
     list.forEach(a=>addRow(a.artworkUrl100,a.collectionName,a.artistName,()=>loadAlbum(a)));
-  }catch(e){sMsg("Suche nicht möglich ("+e.message+"). Liste einfach von Hand eintippen.","bad");}}
+  }catch(e){sMsg(Tf("Suche nicht möglich ({e}). Liste einfach von Hand eintippen.",{e:e.message}),"bad");}}
 
 const ITUNES="https://itunes.apple.com";
 function sprache(){return navigator.language||"de-CH";}
@@ -1890,20 +1897,20 @@ async function jsonpTry(u){try{return await jsonp(u);}catch(e){return null;}}
 
 /* Alben eines Interpreten bei Deezer */
 async function showDeezerAlbums(a){
-  sMsg("Lade Alben von "+a.name+" …");
+  sMsg(Tf("Lade Alben von {a} …",{a:a.name}));
   const d=await jsonpTry("https://api.deezer.com/artist/"+a.id+"/albums?limit=100&output=jsonp");
   const alben=(d&&d.data)||[];
   $("results").innerHTML="";
   if(!alben.length)return sMsg("Keine Alben gefunden.","bad");
-  sMsg(alben.length+" Alben (Deezer)");
-  addRow("","← Zurück zur Suche","",()=>{$("results").innerHTML="";sMsg("");});
+  sMsg(Tf("{n} Alben (Deezer)",{n:alben.length}));
+  addRow("",T("← Zurück zur Suche"),"",()=>{$("results").innerHTML="";sMsg("");});
   alben.sort((x,y)=>String(y.release_date||"").localeCompare(String(x.release_date||"")))
     .forEach(al=>addRow(al.cover_medium||"",al.title,(al.release_date||"").slice(0,4),
       ()=>loadDeezerAlbum(Object.assign({artist:{name:a.name}},al))));}
 
 /* Alle Alben einer Band */
 async function showAlbumsOf(a){
-  sMsg("Lade Alben von "+a.artistName+" …");
+  sMsg(Tf("Lade Alben von {a} …",{a:a.artistName}));
   try{
     const d=await jsonp(ITUNES+"/lookup?id="+a.artistId+"&entity=album&limit=100&country="+itunesCountry());
     const albums=(d.results||[]).filter(r=>r.collectionId&&r.collectionName)
@@ -1920,11 +1927,11 @@ async function showAlbumsOf(a){
       const art=((dz&&dz.data)||[])[0];
       if(art)return showDeezerAlbums(art);
       return sMsg("Keine Alben gefunden.","bad");}
-    sMsg(albums.length+" Alben");
-    addRow("","← Zurück zur Suche","",()=>{$("results").innerHTML="";sMsg("");});
+    sMsg(Tf("{n} Alben",{n:albums.length}));
+    addRow("",T("← Zurück zur Suche"),"",()=>{$("results").innerHTML="";sMsg("");});
     albums.forEach(al=>addRow(al.artworkUrl100,al.collectionName,
       (al.releaseDate||"").slice(0,4)+(al.trackCount?" · "+al.trackCount+" Titel":""),()=>loadAlbum(al)));
-  }catch(e){sMsg("Alben nicht ladbar ("+e.message+").","bad");}}
+  }catch(e){sMsg(Tf("Alben nicht ladbar ({e}).",{e:e.message}),"bad");}}
 
 /* Aus Trefferdaten eine Zeile "Titel  m:ss" bauen */
 function trackLine(t){
@@ -2013,7 +2020,8 @@ async function loadSong(t){
   try{
     const songs=t.collectionId?await fetchTracks(t.collectionId,t):[];
     if(songs.length){fillList(songs);
-      sMsg(songs.length+" Titel aus „"+(t.collectionName||"Album")+"“ übernommen ("+trackSource+").","ok");}
+      sMsg(Tf("{n} Titel aus „{a}“ übernommen ({q}).",
+        {n:songs.length,a:t.collectionName||"Album",q:trackSource}),"ok");}
     else{fillList([t]); sMsg("Song übernommen.","ok");}
   }catch(e){fillList([t]); sMsg("Song übernommen, Album nicht erreichbar.","warn");}
   render();}
@@ -2032,7 +2040,7 @@ async function loadDeezerAlbum(al){
     if(d.link){state.qr=d.link;$("qr").value=state.qr;}
     const cov=d.cover_xl||al.cover_xl||d.cover_big||al.cover_big;
     if(cov){$("coverUrl").value=cov; loadCoverFromUrl(cov);}
-    sMsg(songs.length+" Titel übernommen (Deezer).","ok");
+    sMsg(Tf("{n} Titel übernommen ({q}).",{n:songs.length,q:"Deezer"}),"ok");
     render();
   }catch(e){sMsg("Deezer nicht erreichbar.","bad");}}
 
@@ -2048,10 +2056,10 @@ async function loadAlbum(a){
     if(a.collectionViewUrl){state.qr=a.collectionViewUrl;$("qr").value=state.qr;}
     const url=(a.artworkUrl100||"").replace("100x100bb","1200x1200bb");
     if(url){$("coverUrl").value=url; loadCoverFromUrl(url);}
-    sMsg(songs.length?songs.length+" Titel übernommen ("+trackSource+").":
+    sMsg(songs.length?Tf("{n} Titel übernommen ({q}).",{n:songs.length,q:trackSource}):
       "Keine Datenbank kennt die Titel dieses Albums — bitte von Hand eintippen.", songs.length?"ok":"warn");
     render();
-  }catch(e){sMsg("Tracklist nicht ladbar ("+e.message+").","bad");}}
+  }catch(e){sMsg(Tf("Tracklist nicht ladbar ({e}).",{e:e.message}),"bad");}}
 
 $("searchBtn").onclick=search;
 $("q").addEventListener("keydown",e=>{if(e.key==="Enter")search();});
@@ -2080,9 +2088,9 @@ $("fontFile").onchange=async e=>{
     FONTS.custom={name:f.name.replace(/\.[^.]+$/,"").slice(0,14),stack:"'"+fam+"'"};
     state.font="custom"; state.fontCustom={family:fam,label:FONTS.custom.name};
     allChips(); render();
-    $("fontMsg").className="msg ok"; $("fontMsg").textContent="Schrift geladen und eingesetzt.";
+    $("fontMsg").className="msg ok"; $("fontMsg").textContent=T("Schrift geladen und eingesetzt.");
   }catch(err){$("fontMsg").className="msg bad";
-    $("fontMsg").textContent="Schrift nicht lesbar. TTF, OTF oder WOFF versuchen.";}};
+    $("fontMsg").textContent=T("Schrift nicht lesbar. TTF, OTF oder WOFF versuchen.");}};
 
 /* ===================== Zweites Bild ===================== */
 function nebenBild(nr,input){
@@ -2117,7 +2125,7 @@ function pushHist(){
 function applySnap(js){
   applying=true;
   Object.assign(state,JSON.parse(js));
-  syncUI(); render();
+  syncUI(); applyFx(); render();
   lastSnap=snap(); applying=false; updateUndo();}
 $("undoBtn").onclick=()=>{if(!hist.length)return;
   clearTimeout(histTimer); future.push(snap()); applySnap(hist.pop());};
@@ -2133,7 +2141,9 @@ updateUndo();
 
 /* ===================== Oberfläche abgleichen ===================== */
 function syncUI(){
-  ["title","artist","dateLabel","dateValue","footer","qr"].forEach(k=>{if($(k))$(k).value=state[k]||"";});
+  ["title","artist","dateLabel","dateValue","footer","qr","overline","quote","coverUrl"]
+    .forEach(k=>{if($(k)&&state[k]!==undefined)$(k).value=state[k]||"";});
+  if($("descText"))$("descText").value=state.descText||"";
   $("tracks").value=state.tracksText||"";
   $("pad").value=state.pad; $("padVal").textContent=state.pad+" mm";
   $("bleed").value=state.bleed; $("bleedVal").textContent=state.bleed+" mm";
@@ -2179,15 +2189,13 @@ function syncUI(){
     "display:flex;align-items:center;justify-content:center;padding:22px";
   box.innerHTML='<div style="max-width:460px;background:#14171C;border:1px solid #262B33;'+
     'border-radius:14px;padding:22px">'+
-    '<div style="font-weight:700;font-size:16px;margin-bottom:10px">Nur für den privaten Gebrauch</div>'+
+    '<div style="font-weight:700;font-size:16px;margin-bottom:10px">'+T("Nur für den privaten Gebrauch")+'</div>'+
     '<p style="font-size:13.5px;line-height:1.6;color:#B7BEC9;margin:0 0 14px">'+
-    'Alles läuft auf deinem Gerät, es werden keine Daten übertragen.<br><br>'+
-    'Eigene Fotos und die erzeugten Muster gehören dir. Fremde Albumcover und Bandfotos '+
-    'sind geschützt: für die eigene Wand in Ordnung, verkaufen nicht. '+
-    'Was du hochlädst und was du mit dem Ergebnis machst, liegt in deiner Verantwortung.'+
+    T("Alles läuft auf deinem Gerät, es werden keine Daten übertragen.")+'<br><br>'+
+    T("Eigene Fotos und die erzeugten Muster gehören dir. Fremde Albumcover und Bandfotos sind geschützt: für die eigene Wand in Ordnung, verkaufen nicht. Was du hochlädst und was du mit dem Ergebnis machst, liegt in deiner Verantwortung.")+
     '</p><button id="hinweisOk" style="width:100%;padding:12px;border:0;border-radius:8px;'+
     'background:#5FB8FF;color:#08131C;font-weight:700;font-size:15px;cursor:pointer">'+
-    'Verstanden</button></div>';
+    T("Verstanden")+'</button></div>';
   document.body.appendChild(box);
   box.querySelector("#hinweisOk").onclick=()=>{
     try{localStorage.setItem(KEY,"ja");}catch(e){}
@@ -2207,13 +2215,13 @@ function syncUI(){
     navigator.serviceWorker.register("sw.js").then(reg=>{
       try{reg.update();}catch(e){}
       $("pwaMsg").className="msg ok";
-      $("pwaMsg").textContent="Offline-Betrieb eingerichtet.";
+      $("pwaMsg").textContent=T("Offline-Betrieb eingerichtet.");
     }).catch(()=>{});
     let neugeladen=false;
     navigator.serviceWorker.addEventListener("controllerchange",()=>{
       if(neugeladen)return; neugeladen=true; location.reload();});}
   $("freshBtn").onclick=async()=>{
-    $("pwaMsg").className="msg"; $("pwaMsg").textContent="Suche neue Fassung …";
+    $("pwaMsg").className="msg"; $("pwaMsg").textContent=T("Suche neue Fassung …");
     try{
       if(window.caches){const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)));}
       if(navigator.serviceWorker){
@@ -2252,7 +2260,7 @@ async function plzSuche(){
     if(!d1.length)return msg("Diese Postleitzahl finde ich nicht.","bad");
     lat=+d1[0].lat; lon=+d1[0].lon; ort=(d1[0].display_name||"").split(",")[0];
   }catch(e){return msg("Ortssuche nicht erreichbar.","bad");}
-  msg("Suche Betriebe um "+ort+" …");
+  msg(Tf("Suche Betriebe um {o} …",{o:ort}));
   const q="[out:json][timeout:25];("+
     ['node["shop"="copyshop"]','way["shop"="copyshop"]',
      'node["craft"="printer"]','way["craft"="printer"]',
@@ -2269,13 +2277,13 @@ async function plzSuche(){
     const liste=(d2.elements||[]).map(e=>{
       const t=e.tags||{}, la=e.lat||(e.center&&e.center.lat), lo=e.lon||(e.center&&e.center.lon);
       if(!t.name||!la)return null;
-      const art=OSM_ARTEN[t.shop]||OSM_ARTEN[t.craft]||"Betrieb";
+      const art=T(OSM_ARTEN[t.shop]||OSM_ARTEN[t.craft]||"Betrieb");
       const adr=[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" ")+
         (t["addr:city"]?", "+t["addr:city"]:"");
       return {name:t.name,art,adr,km:entfernung(lat,lon,la,lo),la,lo,web:t.website||t["contact:website"]};
     }).filter(Boolean).sort((a,b)=>a.km-b.km).slice(0,25);
     if(!liste.length)return msg("In 20 km ist bei OpenStreetMap nichts eingetragen. Die Online-Anbieter unten helfen weiter.","warn");
-    msg(liste.length+" Betriebe um "+ort);
+    msg(Tf("{n} Betriebe um {o}",{n:liste.length,o:ort}));
     liste.forEach(e=>{
       const a=document.createElement("a");
       a.className="res"; a.target="_blank"; a.rel="noopener";
@@ -2315,7 +2323,7 @@ function anbieterListe(){
     const el=document.createElement("a");
     el.className="res"; el.href=a.l; el.target="_blank"; el.rel="noopener";
     el.innerHTML='<div style="width:40px;text-align:center;color:var(--accent);font-size:15px">→</div>'+
-      '<div><div class="t">'+a.n+'</div><div class="a">'+a.g+'</div></div>';
+      '<div><div class="t">'+T(a.n)+'</div><div class="a">'+T(a.g)+'</div></div>';
     host.appendChild(el);});}
 anbieterListe();
 
@@ -2372,10 +2380,10 @@ function stilListe(){
       'background:'+th.ink+'"></div>'+
       '<div style="position:absolute;left:6px;right:16px;bottom:15px;height:4px;border-radius:2px;'+
       'background:'+th.sub+'"></div></div>'+
-      '<div><div class="t">'+v.n+'</div><div class="a">'+v.b+'</div></div>';
+      '<div><div class="t">'+T(v.n)+'</div><div class="a">'+T(v.b)+'</div></div>';
     b.addEventListener("click",()=>{
       Object.assign(state,v.d);
-      syncUI(); makeBgPhoto(); render();});
+      syncUI(); applyFx(); render();});
     host.appendChild(b);});}
 stilListe();
 
@@ -2418,12 +2426,12 @@ const DRUCKWEGE=[
     const box=document.createElement("div");
     box.style.cssText="border:1px solid var(--line);border-radius:9px;padding:12px;margin-top:10px;"+
       "background:var(--panel2)";
-    box.innerHTML='<div style="font-weight:600;font-size:14px;margin-bottom:6px">'+d.name+'</div>'+
-      '<p style="font-size:12.5px;line-height:1.55;color:var(--dim);margin:0 0 8px">'+d.was+
-      '<br><span style="color:var(--text)">Mitgeben:</span> '+d.mit+
-      (d.bsp?'<br>'+d.bsp:'')+'</p>';
+    box.innerHTML='<div style="font-weight:600;font-size:14px;margin-bottom:6px">'+T(d.name)+'</div>'+
+      '<p style="font-size:12.5px;line-height:1.55;color:var(--dim);margin:0 0 8px">'+T(d.was)+
+      '<br><span style="color:var(--text)">'+T('Mitgeben:')+'</span> '+T(d.mit)+
+      (d.bsp?'<br>'+T(d.bsp):'')+'</p>';
     const b=document.createElement("button");
-    b.className="chip"; b.textContent="Einstellungen übernehmen";
+    b.className="chip"; b.textContent=T("Einstellungen übernehmen");
     b.onclick=()=>{
       Object.assign(state,d.set);
       syncUI(); render();
@@ -2439,7 +2447,7 @@ const DRUCKWEGE=[
 /* ===================== Anlass-Vorlagen ===================== */
 /* Jeder Anlass setzt zuerst alles auf einen ruhigen Grundzustand,
    damit keine Reste vom vorherigen stehen bleiben. */
-const P_BASIS={bgStyle:"flat",paletteNumbers:false,metaRechts:false,showWave:false,showQR:false,waveMode:"small",waveStyle:"mirror",rating:0,
+const P_BASIS={bgStyle:"flat",imgFx:"none",fxContrast:1,fxBright:1,bgStrength:.5,paletteNumbers:false,metaRechts:false,showWave:false,showQR:false,waveMode:"small",waveStyle:"mirror",rating:0,
   wrapList:false,descText:"",quote:"",overline:"",numbered:false,align:"left",vAlign:"top",
   imgH:0,ratio:"1:1",layout:"standard",advisory:false,showPalette:true,titleScale:1,listScale:1};
 const PRESETS={
@@ -2527,14 +2535,14 @@ const PRESETS={
   const sel=$("preset"), gruppen={};
   Object.entries(PRESETS).forEach(([k,v])=>{
     const g=v.g||"Weitere";
-    if(!gruppen[g]){gruppen[g]=document.createElement("optgroup");gruppen[g].label=g;
+    if(!gruppen[g]){gruppen[g]=document.createElement("optgroup");gruppen[g].label=T(g);
       sel.appendChild(gruppen[g]);}
-    const o=document.createElement("option"); o.value=k; o.textContent=v.name;
+    const o=document.createElement("option"); o.value=k; o.textContent=T(v.name);
     gruppen[g].appendChild(o);});
   $("presetApply").onclick=()=>{
     const p=PRESETS[sel.value]; if(!p)return;
     Object.assign(state,P_BASIS,p.d);
-    syncUI(); makeBgPhoto(); render();};
+    syncUI(); applyFx(); render();};
 })();
 
 
@@ -2712,14 +2720,14 @@ async function saveFile(blob,name){
       const f=new File([blob],name,{type:blob.type});
       if(navigator.canShare({files:[f]})){
         await navigator.share({files:[f],title:name});
-        msg(name+" geteilt"); return;}}
+        msg(Tf("{f} geteilt",{f:name})); return;}}
   }catch(e){ if(e&&e.name==="AbortError"){msg("Abgebrochen.","warn");return;} }
   const u=URL.createObjectURL(blob), a=document.createElement("a");
   if("download" in a){
     a.href=u; a.download=name; a.rel="noopener";
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(u),8000);
-    msg(name+" gespeichert"); return;}
+    msg(Tf("{f} gespeichert",{f:name})); return;}
   const w=window.open(u,"_blank");
   if(w)msg("In neuem Tab geöffnet — dort lange tippen und sichern.","warn");
   else msg("Der Browser hat das Speichern blockiert. Bitte Pop-ups erlauben.","bad");}
@@ -2735,7 +2743,7 @@ function bigCanvas(dpi){
   const cfg=buildCfg(), sh=sheetSize(cfg);
   const real=fitDpi(sh,dpi);
   if(real<dpi){$("exportMsg").className="msg warn";
-    $("exportMsg").textContent="Dieses Gerät schafft nur "+real+" dpi bei dieser Grösse — es wird mit "+real+" dpi gespeichert.";}
+    $("exportMsg").textContent=Tf("Dieses Gerät schafft nur {d} dpi bei dieser Grösse — es wird mit {d} dpi gespeichert.",{d:real});}
   const px=Math.round(sh.w/25.4*real), py=Math.round(sh.h/25.4*real);
   const cv=document.createElement("canvas"); cv.width=px; cv.height=py;
   const ctx=cv.getContext("2d");
@@ -2746,53 +2754,57 @@ $("pngBtn").onclick=()=>{
   const sh=sheetSize(buildCfg()), real=fitDpi(sh,state.dpi);
   try{bigCanvas(state.dpi).toBlob(b=>{
     if(!b){$("exportMsg").className="msg bad";
-      $("exportMsg").textContent="Das Bild ist zu gross für diesen Browser. Kleinere Auflösung wählen.";return;}
+      $("exportMsg").textContent=T("Das Bild ist zu gross für diesen Browser. Kleinere Auflösung wählen.");return;}
     saveFile(b,fileBase()+"-"+Math.round(sh.w)+"x"+Math.round(sh.h)+"mm-"+real+"dpi.png");},"image/png");}
   catch(e){$("exportMsg").className="msg bad";
-    $("exportMsg").textContent="Export gesperrt: Das Bild stammt von einer fremden Adresse. Bitte als Datei laden.";}};
+    $("exportMsg").textContent=T("Export gesperrt: Das Bild stammt von einer fremden Adresse. Bitte als Datei laden.");}};
 $("pdfBtn").onclick=()=>{
   const sh=sheetSize(buildCfg());
   let url; try{url=bigCanvas(300).toDataURL("image/png");}
-  catch(e){$("exportMsg").className="msg bad";$("exportMsg").textContent="Druck gesperrt: Bild von fremder Adresse. Bitte als Datei laden.";return;}
+  catch(e){$("exportMsg").className="msg bad";$("exportMsg").textContent=T("Druck gesperrt: Bild von fremder Adresse. Bitte als Datei laden.");return;}
   const w=window.open("","_blank");
   if(!w){$("exportMsg").className="msg bad";
-    $("exportMsg").textContent="Der Browser hat das Druckfenster blockiert. Nimm „PDF speichern“.";return;}
+    $("exportMsg").textContent=T("Der Browser hat das Druckfenster blockiert. Nimm „PDF speichern“.");return;}
   w.document.write(`<html><head><title>${fileBase()}</title><style>
     @page{size:${sh.w}mm ${sh.h}mm;margin:0}
     html,body{margin:0;padding:0}img{width:${sh.w}mm;height:${sh.h}mm;display:block}
     </style></head><body><img src="${url}" onload="window.print()"></body></html>`);
   w.document.close();
-  $("exportMsg").className="msg ok"; $("exportMsg").textContent="Im Druckdialog 'Als PDF sichern' wählen.";};
+  $("exportMsg").className="msg ok"; $("exportMsg").textContent=T("Im Druckdialog 'Als PDF sichern' wählen.");};
 /* Displate verlangt: Verhältnis 1:1,4 · kurze Seite mindestens 2900 px ·
    300 dpi · JPG · keine Rahmen · Text mindestens 200 px vom Rand
    (Stand der Vorgaben von displate.com) */
 function displateCheck(){
   const cfg=buildCfg(), sh=sheetSize(cfg), hinweise=[];
   const v=Math.max(sh.w,sh.h)/Math.min(sh.w,sh.h);
-  if(Math.abs(v-1.4)>0.01)hinweise.push("Seitenverhältnis ist "+v.toFixed(3)+":1 statt 1,4:1 — Format „Displate“ wählen.");
+  if(Math.abs(v-1.4)>0.01)
+    hinweise.push(Tf("Seitenverhältnis ist {v}:1 statt 1,4:1 — Format „Displate“ wählen.",{v:v.toFixed(3)}));
   const kurz=Math.round(Math.min(sh.w,sh.h)/25.4*300);
-  if(kurz<2900)hinweise.push("Kurze Seite ergibt nur "+kurz+" px, nötig sind 2900.");
+  if(kurz<2900)
+    hinweise.push(Tf("Kurze Seite ergibt nur {p} px, nötig sind 2900.",{p:kurz}));
   const randPx=Math.round((cfg.pad+(+state.mat||0))/25.4*300);
-  const nötig=Math.round(200*(kurz/2900));
-  if(randPx<nötig)hinweise.push("Innenabstand ist "+randPx+" px, Displate will mindestens "+nötig+" px Abstand zum Rand.");
+  const noetig=Math.round(200*(kurz/2900));
+  if(randPx<noetig)
+    hinweise.push(Tf("Innenabstand ist {a} px, Displate will mindestens {b} px Abstand zum Rand.",
+      {a:randPx,b:noetig}));
   if(["frame","double","thick","half"].indexOf(state.deko)>=0)
-    hinweise.push("Displate lehnt Rahmen in der Gestaltung ab — Deko auf „Ohne“ stellen.");
+    hinweise.push(T("Displate lehnt Rahmen in der Gestaltung ab — Deko auf „Ohne“ stellen."));
   if(state.marks||+state.bleed>0)
-    hinweise.push("Anschnitt und Schnittmarken gehören nicht auf eine Displate-Datei.");
+    hinweise.push(T("Anschnitt und Schnittmarken gehören nicht auf eine Displate-Datei."));
   return hinweise;}
 
 function exportDisplate(){
   const h=displateCheck();
   const box=$("displateMsg");
   if(h.length){box.className="msg warn";
-    box.innerHTML="Vor dem Hochladen prüfen:<br>· "+h.join("<br>· ");}
-  else{box.className="msg ok"; box.textContent="Alle Vorgaben erfüllt.";}
+    box.innerHTML=T("Vor dem Hochladen prüfen:")+"<br>· "+h.join("<br>· ");}
+  else{box.className="msg ok"; box.textContent=T("Alle Vorgaben erfüllt.");}
   const sh=sheetSize(buildCfg());
   try{
     const cv=bigCanvas(300);
     cv.toBlob(b=>{if(b)saveFile(b,fileBase()+"-displate-"+cv.width+"x"+cv.height+".jpg");},
       "image/jpeg",0.95);
-  }catch(e){box.className="msg bad";box.textContent="Export blockiert — Bild bitte als Datei laden.";}}
+  }catch(e){box.className="msg bad";box.textContent=T("Export blockiert — Bild bitte als Datei laden.");}}
 
 function svgOut(vector){
   const cfg=buildCfg(), sh=sheetSize(cfg), mctx=$("measure").getContext("2d");
@@ -2820,6 +2832,7 @@ function tplRender(){
       syncUI();
       if(state.imgUrl){const im=new Image();im.onload=()=>useImage(im,state.imgUrl,false);im.src=state.imgUrl;}
       else{img=null;}
+      if(!state.imgUrl){applyFx();}
       if(state.img2Url){const im=new Image();im.onload=()=>{img2=im;render();};im.src=state.img2Url;}
       else{img2=null;}
       if(state.img3Url){const im=new Image();im.onload=()=>{img3=im;render();};im.src=state.img3Url;}
@@ -2839,8 +2852,8 @@ $("tplSave").onclick=()=>{
 tplRender();
 
 if(IOS)$("iosHint").style.display="block";
-$("brand").textContent="Poster-Werkstatt · Fassung "+VERSION;
-$("versionZeile").textContent="Du benutzt Fassung "+VERSION+".";
+$("brand").textContent=T("Poster-Werkstatt")+" · "+(LANG==="de"?"Fassung ":"Version ")+VERSION;
+$("versionZeile").textContent=Tf("Du benutzt Fassung {v}.",{v:VERSION});
 /* Aus den Abschnitten eine Reiterleiste bauen — es ist immer genau einer offen */
 const NAVKURZ={"Album suchen":"Suchen","Soundwave & QR-Code":"Soundwave","Stil & Format":"Stil",
   "Vorlagen & App":"Vorlagen","Drucken lassen":"Drucken","Gestaltung":"Stil","Rechtliches":"Recht"};
