@@ -119,9 +119,10 @@
   .res .a{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   a.res,a.res:visited,a.res:hover{color:var(--text);text-decoration:none}
   a.res .t{color:var(--text)} a.res .a{color:var(--dim)}
-  #anbieterListe .res,#plzResults .res{align-items:flex-start;padding:12px}
-  #anbieterListe .t,#plzResults .t{white-space:normal;overflow:visible;font-weight:600;margin-bottom:3px}
-  #anbieterListe .a,#plzResults .a{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.5}
+  #anbieterListe .res,#plzResults .res,#stilList .res{align-items:flex-start;padding:12px}
+  #stilList{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+  #anbieterListe .t,#plzResults .t,#stilList .t{white-space:normal;overflow:visible;font-weight:600;margin-bottom:3px}
+  #anbieterListe .a,#plzResults .a,#stilList .a{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.5}
 
   .swatches{display:flex;gap:6px;margin-top:9px}
   .swatches i{flex:1;height:30px;border-radius:7px}
@@ -277,6 +278,8 @@
         </div>
         <button class="b2" id="colorReset">Farben zurücksetzen</button>
         <label class="f">Schrift</label><div class="chips" id="fontChips"></div>
+        <p class="hint">Welche Schrift wirklich erscheint, hängt vom Gerät ab — fehlt eine,
+          nimmt der Browser die nächstbeste. Für ein sicheres Ergebnis eine eigene Schriftdatei laden.</p>
         <button class="b2" id="fontBtn">Eigene Schrift laden</button>
         <input type="file" id="fontFile" accept=".ttf,.otf,.woff,.woff2,font/*" hidden>
         <div class="msg" id="fontMsg"></div>
@@ -301,9 +304,9 @@
     </details>
 
     <details class="sec">
-      <summary>Welle &amp; QR-Code</summary>
+      <summary>Soundwave &amp; QR-Code</summary>
       <div class="body">
-        <label class="check"><input type="checkbox" id="showWave" checked> Welle zeigen</label>
+        <label class="check"><input type="checkbox" id="showWave" checked> Soundwave zeigen</label>
         <canvas id="waveEdit" height="96"></canvas>
         <div class="row" style="margin-top:8px">
           <button class="chip" id="waveRandom">Würfeln</button>
@@ -365,13 +368,22 @@
     <details class="sec">
       <summary>Vorlagen &amp; App</summary>
       <div class="body">
+        <label class="f">Fertige Gestaltungen</label>
+        <div id="stilList"></div>
+        <p class="hint">Setzt nur das Aussehen — Bild, Titel und Liste bleiben, wie sie sind.</p>
+
+        <label class="f">Eigene Vorlage sichern</label>
         <div class="row">
           <input type="text" id="tplName" placeholder="Name der Vorlage">
           <button class="chip" id="tplSave" style="flex:0 0 auto">Sichern</button>
         </div>
         <div id="tplList"></div>
         <div class="msg" id="tplMsg"></div>
-        <button class="b2" id="freshBtn">Neueste Fassung holen</button>
+        <p class="hint">Sichert alles: Bild, Texte, Farben und Einstellungen. Liegt nur auf diesem Gerät.</p>
+
+        <label class="f">Programm</label>
+        <div class="hint" id="versionZeile" style="margin:0 0 8px"></div>
+        <button class="b" id="freshBtn">Auf neueste Fassung prüfen</button>
         <button class="b2" id="installBtn" style="display:none">Auf dem Startbildschirm ablegen</button>
         <div class="msg" id="pwaMsg"></div>
       </div>
@@ -497,7 +509,7 @@ function showFatal(msg){
   box.textContent="Fehler: "+msg;}
 addEventListener("error",e=>showFatal((e.message||e.type)+"  ·  Zeile "+(e.lineno||"?")));
 addEventListener("unhandledrejection",e=>showFatal(String(e.reason&&e.reason.message||e.reason)));
-const VERSION="26";
+const VERSION="29";
 const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
   (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 
@@ -517,9 +529,19 @@ const THEMES = {
   gold:   {name:"Gold",    bg:"#111111",ink:"#E8C87A",sub:"#9A8248",rule:"#3A3020",gray:false},
 };
 const FONTS = {
-  sans:{name:"Sans",stack:"'Helvetica Neue',Helvetica,Arial,sans-serif"},
-  serif:{name:"Serif",stack:"Georgia,'Times New Roman',serif"},
-  mono:{name:"Mono",stack:"ui-monospace,'SF Mono',Menlo,monospace"},
+  sans:    {name:"Sans",       pdf:"sans",  stack:"'Helvetica Neue',Helvetica,Arial,sans-serif"},
+  grotesk: {name:"Grotesk",    pdf:"sans",  stack:"Inter,'Segoe UI',Roboto,system-ui,sans-serif"},
+  avenir:  {name:"Avenir",     pdf:"sans",  stack:"'Avenir Next',Avenir,'Nunito Sans','Segoe UI',sans-serif"},
+  futura:  {name:"Futura",     pdf:"sans",  stack:"Futura,'Century Gothic','Avenir Next',Avenir,sans-serif"},
+  schmal:  {name:"Schmal",     pdf:"sans",  stack:"'Arial Narrow',Oswald,Haettenschweiler,'Roboto Condensed',sans-serif"},
+  wucht:   {name:"Wucht",      pdf:"sans",  stack:"Impact,Haettenschweiler,'Arial Black','Anton',sans-serif"},
+  serif:   {name:"Serif",      pdf:"serif", stack:"Georgia,'Times New Roman',serif"},
+  didot:   {name:"Didot",      pdf:"serif", stack:"Didot,'Bodoni MT','Playfair Display',Georgia,serif"},
+  garamond:{name:"Garamond",   pdf:"serif", stack:"Garamond,'EB Garamond','Apple Garamond','Times New Roman',serif"},
+  baskerv: {name:"Baskerville",pdf:"serif", stack:"Baskerville,'Libre Baskerville','Iowan Old Style',Georgia,serif"},
+  palatino:{name:"Palatino",   pdf:"serif", stack:"Palatino,'Palatino Linotype','Book Antiqua',Georgia,serif"},
+  schreib: {name:"Maschine",   pdf:"mono",  stack:"'American Typewriter','Courier New',Courier,monospace"},
+  mono:    {name:"Mono",       pdf:"mono",  stack:"ui-monospace,'SF Mono',Menlo,monospace"},
 };
 const FORMAT_GROUPS = [
   ["DIN",[["a6","A6",105,148],["a5","A5",148,210],["a4","A4",210,297],["a3","A3",297,420],["a2","A2",420,594],["a1","A1",594,841]]],
@@ -850,8 +872,10 @@ function qrFor(text){
   if(qrCache.text===text)return qrCache.m;
   let m=null; try{m=qrMatrix(text);}catch(e){m=null;}
   qrCache={text,m}; return m;}
+let qrGezeichnet=false;
 function drawQR(r,cfg,x,y,size){
   const m=qrFor(cfg.qr); if(!m)return 0;
+  if(!r.vector)qrGezeichnet=true;
   const n=m.length, quiet=3, cell=size/(n+quiet*2);
   const f=cfg.qrFarben||{dark:"#000000",light:"#FFFFFF"};
   const dunkel=r.vector?"#000000":f.dark, hell=f.light;
@@ -1327,6 +1351,7 @@ function render(){
   cv.style.width=sh.w*scale+"px"; cv.style.height=sh.h*scale+"px";
   cv.width=Math.round(sh.w*scale*dpr); cv.height=Math.round(sh.h*scale*dpr);
   const ctx=cv.getContext("2d"); ctx.clearRect(0,0,cv.width,cv.height);
+  qrGezeichnet=false;
   const laser=!!state.laserPreview;
   if(sh.m>0||laser){ctx.fillStyle="#FFFFFF";ctx.fillRect(0,0,cv.width,cv.height);}
   renderSheet((ox,oy)=>canvasRenderer(ctx,scale*dpr,FONTS[state.font].stack,ox,oy,laser),cfg);
@@ -1352,6 +1377,8 @@ function render(){
     else if(f.invertiert){$("qrMsg").className="msg ok";
       $("qrMsg").textContent="Heller Code auf dunklem Grund, Kontrast "+f.k.toFixed(1)+
         ":1 — moderne Handys lesen das problemlos.";}
+    else if(!qrGezeichnet){$("qrMsg").className="msg warn";
+      $("qrMsg").textContent="Kein Platz für den QR-Code. Liste kürzen, Soundwave schmaler stellen oder das Bild kleiner machen.";}
     else{$("qrMsg").className="msg ok";
       $("qrMsg").textContent="QR-Code bereit, Kontrast "+f.k.toFixed(1)+":1.";}}
   else $("qrMsg").textContent="";
@@ -1818,6 +1845,12 @@ async function search(){
   }catch(e){sMsg("Suche nicht möglich ("+e.message+"). Liste einfach von Hand eintippen.","bad");}}
 
 const ITUNES="https://itunes.apple.com";
+function sprache(){return navigator.language||"de-CH";}
+function datumLang(iso){
+  if(!iso)return "";
+  try{return new Date(iso).toLocaleDateString(sprache(),
+    {day:"numeric",month:"long",year:"numeric"});}
+  catch(e){return String(iso).slice(0,10);}}
 function itunesCountry(){
   const l=(navigator.language||"de-DE").split("-");
   return (l[1]||"DE").toUpperCase();}
@@ -1947,8 +1980,7 @@ function fillList(songs){
 async function loadSong(t){
   state.title=t.trackName; state.artist=t.artistName;
   state.dateLabel="Veröffentlicht";
-  state.dateValue=t.releaseDate?new Date(t.releaseDate).toLocaleDateString("de-DE",
-    {day:"numeric",month:"long",year:"numeric"}):"";
+  state.dateValue=datumLang(t.releaseDate);
   if(t.trackViewUrl){state.qr=t.trackViewUrl;$("qr").value=state.qr;}
   ["title","artist","dateLabel","dateValue"].forEach(k=>$(k).value=state[k]||"");
   const url=(t.artworkUrl100||"").replace("100x100bb","1200x1200bb");
@@ -1970,8 +2002,7 @@ async function loadDeezerAlbum(al){
     const songs=((d.tracks&&d.tracks.data)||[]).map(t=>norm(t.title,(t.duration||0)*1000));
     state.title=al.title; state.artist=(al.artist&&al.artist.name)||"";
     if(d.release_date){state.dateLabel="Veröffentlicht";
-      state.dateValue=new Date(d.release_date).toLocaleDateString("de-DE",
-        {day:"numeric",month:"long",year:"numeric"});}
+      state.dateValue=datumLang(d.release_date);}
     if(songs.length)fillList(songs);
     ["title","artist","dateLabel","dateValue"].forEach(k=>$(k).value=state[k]||"");
     if(d.link){state.qr=d.link;$("qr").value=state.qr;}
@@ -1987,8 +2018,7 @@ async function loadAlbum(a){
   try{
     const songs=await fetchTracks(a.collectionId,a);
     state.title=a.collectionName; state.artist=a.artistName; state.dateLabel="Veröffentlicht";
-    state.dateValue=a.releaseDate?new Date(a.releaseDate).toLocaleDateString("de-DE",
-      {day:"numeric",month:"long",year:"numeric"}):"";
+    state.dateValue=datumLang(a.releaseDate);
     if(songs.length)fillList(songs);
     ["title","artist","dateLabel","dateValue"].forEach(k=>$(k).value=state[k]||"");
     if(a.collectionViewUrl){state.qr=a.collectionViewUrl;$("qr").value=state.qr;}
@@ -2264,6 +2294,66 @@ function anbieterListe(){
       '<div><div class="t">'+a.n+'</div><div class="a">'+a.g+'</div></div>';
     host.appendChild(el);});}
 anbieterListe();
+
+/* ===================== Fertige Gestaltungen ===================== */
+const STILVORLAGEN=[
+  {n:"Klassisch",b:"Weiss, klare Serifenlose, nichts drumherum",
+   d:{theme:"classic",colors:null,font:"sans",layout:"standard",deko:"none",bgStyle:"flat",
+      align:"left",mat:0,titleScale:1,metaRechts:false,paletteNumbers:false}},
+  {n:"Galerie",b:"Warmes Papier mit breitem Passepartout und Rahmen",
+   d:{theme:"papier",colors:null,font:"serif",layout:"standard",deko:"frame",bgStyle:"flat",
+      align:"left",mat:22,titleScale:1,imgH:0}},
+  {n:"Nachtlicht",b:"Cover unscharf im Hintergrund, Infos rechts",
+   d:{theme:"nacht",colors:null,font:"sans",layout:"standard",deko:"none",bgStyle:"photo",
+      bgStrength:.6,align:"left",mat:0,imgH:.55,vAlign:"bottom",metaRechts:true,
+      paletteNumbers:true,titleScale:1.05}},
+  {n:"Gold Edition",b:"Gold auf Schwarz mit Doppelrahmen",
+   d:{theme:"gold",colors:null,font:"serif",layout:"standard",deko:"double",bgStyle:"flat",
+      align:"left",mat:0,metaRechts:true,titleScale:1}},
+  {n:"Kino",b:"Bild randlos, Text auf dunkler Fläche darüber",
+   d:{theme:"onyx",colors:null,font:"sans",layout:"full",deko:"none",bgStyle:"flat",
+      align:"left",mat:0,titleScale:1.15,vAlign:"top"}},
+  {n:"Vinyl",b:"Schreibmaschine, breite Soundwave, zwei Linien",
+   d:{theme:"onyx",colors:null,font:"mono",layout:"standard",deko:"rules",bgStyle:"flat",
+      align:"left",mat:0,showWave:true,waveMode:"wide",waveStyle:"bars",listScale:.95}},
+  {n:"Polaroid",b:"Bild im breiten Rahmen, Text mittig darunter",
+   d:{theme:"papier",colors:null,font:"sans",layout:"polaroid",deko:"none",bgStyle:"flat",
+      align:"center",mat:0,titleScale:1}},
+  {n:"Minimal",b:"Nur Titel und Soundwave, viel Luft",
+   d:{theme:"classic",colors:null,font:"sans",layout:"minimal",deko:"none",bgStyle:"flat",
+      align:"center",mat:18,showWave:true,waveMode:"wide",titleScale:1.1}},
+  {n:"Kraftpapier",b:"Braunton mit Körnung und Eckwinkeln",
+   d:{theme:"kraft",colors:null,font:"serif",layout:"standard",deko:"corners",bgStyle:"grain",
+      bgStrength:.55,align:"left",mat:0}},
+  {n:"Blaupause",b:"Kühles Blaugrau mit Skalenstrichen",
+   d:{theme:"eis",colors:null,font:"mono",layout:"standard",deko:"ticks",bgStyle:"gradient",
+      bgStrength:.4,align:"left",mat:0,listScale:.95}},
+  {n:"Sanft",b:"Rosé, Serifen, mittig, Porträtaufbau",
+   d:{theme:"rose",colors:null,font:"serif",layout:"portrait",deko:"none",bgStyle:"flat",
+      align:"center",mat:16,imgH:.6,titleScale:1.05}},
+  {n:"Doppelbild",b:"Zwei Bilder nebeneinander auf Sand",
+   d:{theme:"sand",colors:null,font:"sans",layout:"duo",deko:"line",bgStyle:"flat",
+      align:"left",mat:0}},
+];
+function stilListe(){
+  const host=$("stilList"); if(!host)return;
+  host.innerHTML="";
+  STILVORLAGEN.forEach(v=>{
+    const th=THEMES[v.d.theme]||THEMES.classic;
+    const b=document.createElement("button");
+    b.type="button"; b.className="res"; b.style.width="100%";
+    b.innerHTML='<div style="width:42px;height:42px;border-radius:7px;flex:0 0 auto;'+
+      'background:'+th.bg+';border:1px solid '+th.rule+';position:relative">'+
+      '<div style="position:absolute;left:6px;right:6px;bottom:7px;height:5px;border-radius:2px;'+
+      'background:'+th.ink+'"></div>'+
+      '<div style="position:absolute;left:6px;right:16px;bottom:15px;height:4px;border-radius:2px;'+
+      'background:'+th.sub+'"></div></div>'+
+      '<div><div class="t">'+v.n+'</div><div class="a">'+v.b+'</div></div>';
+    b.addEventListener("click",()=>{
+      Object.assign(state,v.d);
+      syncUI(); makeBgPhoto(); render();});
+    host.appendChild(b);});}
+stilListe();
 
 /* ===================== Druckwege ===================== */
 const DRUCKWEGE=[
@@ -2571,15 +2661,21 @@ function pdfAssemble(Wpt,Hpt,r,fontKey){
 function exportPDF(){
   const cfg=buildCfg(), sh=sheetSize(cfg);
   const Wpt=sh.w*PDF_K, Hpt=sh.h*PDF_K;
-  const fk=PDF_FONTS[state.font]?state.font:"sans";
+  const f=FONTS[state.font];
+  const fk=(f&&PDF_FONTS[f.pdf])?f.pdf:"sans";
   const mctx=$("measure").getContext("2d");
   let r=null;
   renderSheet((ox,oy)=>{r=pdfRenderer(mctx,fk,Hpt,ox,oy);return r;},cfg);
   const bytes=pdfAssemble(Wpt,Hpt,r,fk);
   saveFile(new Blob([bytes],{type:"application/pdf"}),fileBase()+".pdf");
-  if(!PDF_FONTS[state.font]){
+  const eigen=!f||!f.pdf;
+  const passt=f&&["sans","serif","mono"].indexOf(state.font)>=0;
+  if(eigen)
+    $("exportMsg").textContent="PDF gespeichert — eigene Schriften lassen sich nicht einbetten, im PDF steht Helvetica.";
+  else if(!passt){
     $("exportMsg").className="msg warn";
-    $("exportMsg").textContent="PDF gespeichert — die eigene Schrift kann darin nicht mitgegeben werden, es steht Helvetica drin.";}
+    $("exportMsg").textContent="PDF gespeichert. Im PDF stehen die Standardschriften ("+
+      PDF_FONTS[fk][0]+") — für die Bildschirmschrift „"+f.name+"“ nimm PNG oder den Druckerweg.";}
 }
 
 /* Export */
@@ -2720,8 +2816,9 @@ tplRender();
 
 if(IOS)$("iosHint").style.display="block";
 $("brand").textContent="Poster-Werkstatt · Fassung "+VERSION;
+$("versionZeile").textContent="Du benutzt Fassung "+VERSION+".";
 /* Aus den Abschnitten eine Reiterleiste bauen — es ist immer genau einer offen */
-const NAVKURZ={"Album suchen":"Suchen","Welle & QR-Code":"Welle","Stil & Format":"Stil",
+const NAVKURZ={"Album suchen":"Suchen","Soundwave & QR-Code":"Soundwave","Stil & Format":"Stil",
   "Vorlagen & App":"Vorlagen","Drucken lassen":"Drucken","Gestaltung":"Stil","Rechtliches":"Recht"};
 (function(){
   try{
