@@ -14,14 +14,14 @@
     --r:11px;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+  html,body{margin:0;padding:0;overflow-x:hidden;background:var(--bg);color:var(--text);
     font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     -webkit-font-smoothing:antialiased}
   ::selection{background:var(--accent);color:#1B1408}
 
-  .app{display:grid;grid-template-columns:1fr 420px;min-height:100vh}
+  .app{display:grid;grid-template-columns:minmax(0,1fr) 420px;min-height:100vh;max-width:100%}
   @supports (height:100dvh){.app{min-height:100dvh}}
-  @media (max-width:900px){.app{grid-template-columns:1fr}}
+  @media (max-width:900px){.app{grid-template-columns:minmax(0,1fr)}}
 
   /* ---------- Bühne ---------- */
   .stage{position:relative;display:flex;align-items:center;justify-content:center;
@@ -43,7 +43,7 @@
   .stagebtns button:disabled{opacity:.25}
 
   /* ---------- Seitenspalte ---------- */
-  .side{background:var(--panel);border-left:1px solid var(--line);
+  .side{background:var(--panel);border-left:1px solid var(--line);min-width:0;
     overflow-y:auto;max-height:100vh}
   @supports (height:100dvh){.side{max-height:100dvh}}
   @media (max-width:900px){.side{border-left:none;max-height:none;overflow:visible}}
@@ -68,7 +68,8 @@
     text-transform:none;font-family:inherit}
   .val{float:right;color:var(--text);font-variant-numeric:tabular-nums;font-size:12px}
 
-  input[type=text],input[type=number],select,textarea{width:100%;background:var(--panel2);
+  input[type=text],input[type=number],select,textarea{width:100%;max-width:100%;
+    min-width:0;background:var(--panel2);
     color:var(--text);border:1px solid var(--line);border-radius:var(--r);padding:11px 12px;
     font-size:15px;outline:none;font-family:inherit;transition:.15s}
   input::placeholder,textarea::placeholder{color:var(--dim2)}
@@ -80,8 +81,9 @@
     background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;
     background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:36px}
 
-  input[type=range]{width:100%;accent-color:var(--accent);height:26px}
-  .row{display:flex;gap:9px}.row>*{flex:1}
+  input[type=range]{width:100%;max-width:100%;accent-color:var(--accent);height:26px;margin:0}
+  .row{display:flex;gap:9px;min-width:0}
+  .row>*{flex:1 1 0;min-width:0}
   .chips{display:flex;flex-wrap:wrap;gap:7px}
   .chip{padding:9px 13px;border:1px solid var(--line);border-radius:var(--r);
     background:var(--panel2);color:var(--text);font-size:13.5px;cursor:pointer;
@@ -133,7 +135,7 @@
   .vorlage button:hover{border-color:var(--line2)}
   .vorlage .del{flex:0 0 auto;padding:11px 13px;color:var(--dim)}
 
-  .colorgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .colorgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
   .colorgrid label{font-size:12px;color:var(--dim);margin-bottom:5px;display:block}
   .colorgrid input[type=color]{width:100%;height:42px;padding:3px;background:var(--panel2);
     border:1px solid var(--line);border-radius:var(--r);cursor:pointer}
@@ -507,9 +509,14 @@ function showFatal(msg){
       "color:#FFD7D7;font:13px/1.5 ui-monospace,monospace;padding:12px 14px;max-height:45vh;overflow:auto";
     (document.body||document.documentElement).appendChild(box);}
   box.textContent="Fehler: "+msg;}
-addEventListener("error",e=>showFatal((e.message||e.type)+"  ·  Zeile "+(e.lineno||"?")));
+addEventListener("error",e=>{
+  const m=e.message||e.type||"";
+  /* Diese Meldung wirft der Browser, wenn sich beim Neuzeichnen die Grösse
+     ändert. Sie ist harmlos und gehört nicht auf den Bildschirm. */
+  if(/ResizeObserver/.test(m))return;
+  showFatal(m+"  ·  Zeile "+(e.lineno||"?"));});
 addEventListener("unhandledrejection",e=>showFatal(String(e.reason&&e.reason.message||e.reason)));
-const VERSION="32";
+const VERSION="33";
 
 /* ===================== Sprache =====================
    Die Oberfläche folgt der Systemsprache: Deutsch bleibt Deutsch,
@@ -2887,7 +2894,15 @@ addEventListener("resize",()=>{render();drawWaveEditor();});
 addEventListener("orientationchange",()=>setTimeout(()=>{render();drawWaveEditor();},250));
 try{
   if(window.ResizeObserver){
-    const ro=new ResizeObserver(()=>{render();});
+    let letzteB=0, letzteH=0, warte=null;
+    const ro=new ResizeObserver(eintraege=>{
+      const r=eintraege[0]&&eintraege[0].contentRect; if(!r)return;
+      /* nur bei echter Änderung neu rechnen und immer erst im nächsten Bild,
+         sonst dreht sich der Beobachter im Kreis */
+      if(Math.abs(r.width-letzteB)<2&&Math.abs(r.height-letzteH)<2)return;
+      letzteB=r.width; letzteH=r.height;
+      if(warte)cancelAnimationFrame(warte);
+      warte=requestAnimationFrame(()=>{warte=null;render();});});
     const st=document.querySelector(".stage"); if(st)ro.observe(st);}
 }catch(e){}
 syncCrop(); syncColors(); ensureWave(); drawWaveEditor();
